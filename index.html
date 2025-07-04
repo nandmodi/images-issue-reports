@@ -156,9 +156,9 @@
       filteredData.forEach(item => {
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td><a href="${item.RAW_INPUT}" target="_blank">View Input</a></td>
-          <td><a href="${item.ai_output}" target="_blank">View AI</a></td>
-          <td><a href="${item.manual}" target="_blank">View Manual</a></td>
+          <td><a href="${item.RAW_INPUT}" target="_blank"><img src="${item.RAW_INPUT}" alt="Input" style="width:100px; height:auto;"></a></td>
+          <td><a href="${item.ai_output}" target="_blank"><img src="${item.ai_output}" alt="AI" style="width:100px; height:auto;"></a></td>
+          <td><a href="${item.manual}" target="_blank"><img src="${item.manual}" alt="Manual" style="width:100px; height:auto;"></a></td>
         `;
         imageTableBody.appendChild(row);
       });
