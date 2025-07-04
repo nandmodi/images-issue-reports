@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Review Dashboard</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    select, input[type="text"] {
+      margin: 10px 0;
+      padding: 8px;
+      width: 200px;
+    }
+    .filters {
+      display: flex;
+      justify-content: flex-start;
+    }
+    .block {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Image Review Dashboard</h1>
+
+  <!-- Filters Section -->
+  <div class="filters">
+    <input type="text" id="filterDate" placeholder="Filter by Date">
+    <select id="filterType">
+      <option value="">Select Image Type</option>
+      <option value="Exterior">Exterior</option>
+      <option value="Interior">Interior</option>
+    </select>
+    <select id="filterIssue">
+      <option value="">Select Issue</option>
+      <option value="Remove BG">Remove BG</option>
+      <option value="See Through">See Through</option>
+      <option value="Other">Other</option>
+      <option value="InputSwap">InputSwap</option>
+      <option value="Shadow & Reflection">Shadow & Reflection</option>
+    </select>
+    <select id="filterEnterprise">
+      <option value="">Select Enterprise</option>
+      <option value="Dealer Vision">Dealer Vision</option>
+      <!-- Add more enterprise options here if needed -->
+    </select>
+    <button onclick="applyFilters()">Apply Filters</button>
+  </div>
+
+  <!-- First Block: Summary (Issue Wise Count & Percentage) -->
+  <div class="block" id="summaryBlock">
+    <h2>Issue Wise Summary</h2>
+    <table id="summaryTable">
+      <thead>
+        <tr>
+          <th>Issue</th>
+          <th>Count</th>
+          <th>Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Summary data will go here -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Second Block: View Image -->
+  <div class="block" id="viewImageBlock">
+    <h2>View Image</h2>
+    <table id="imageTable">
+      <thead>
+        <tr>
+          <th>Input</th>
+          <th>AI</th>
+          <th>Manual</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Image view data will go here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    // Fetch CSV data from Google Sheets
+    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
+    
+    let data = [];
+
+    // Fetch the CSV and process it
+    function fetchData() {
+      $.get(sheetUrl, function (csv) {
+        const parsedData = Papa.parse(csv, { header: true, skipEmptyLines: true }).data;
+        data = parsedData;
+        displaySummary();
+        displayImageData();
+      });
+    }
+
+    // Display Issue-wise Summary
+    function displaySummary() {
+      const summaryData = {};
+      
+      // Populate issue counts
+      data.forEach(item => {
+        const issue = item.rejected_comment || "Other";
+        if (!summaryData[issue]) {
+          summaryData[issue] = 0;
+        }
+        summaryData[issue]++;
+      });
+
+      const summaryTableBody = document.querySelector("#summaryTable tbody");
+      summaryTableBody.innerHTML = ""; // Clear existing data
+
+      Object.keys(summaryData).forEach(issue => {
+        const count = summaryData[issue];
+        const percentage = ((count / data.length) * 100).toFixed(2);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>${issue}</td><td>${count}</td><td>${percentage}%</td>`;
+        summaryTableBody.appendChild(row);
+      });
+    }
+
+    // Display Image Data based on selected filters
+    function displayImageData() {
+      const filteredData = data.filter(item => {
+        const dateMatch = !document.getElementById("filterDate").value || item.createdDate.includes(document.getElementById("filterDate").value);
+        const typeMatch = !document.getElementById("filterType").value || item.image_category === document.getElementById("filterType").value;
+        const issueMatch = !document.getElementById("filterIssue").value || item.rejected_comment === document.getElementById("filterIssue").value;
+        const enterpriseMatch = !document.getElementById("filterEnterprise").value || item.enterprise_name === document.getElementById("filterEnterprise").value;
+        return dateMatch && typeMatch && issueMatch && enterpriseMatch;
+      });
+
+      const imageTableBody = document.querySelector("#imageTable tbody");
+      imageTableBody.innerHTML = ""; // Clear existing data
+
+      filteredData.forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><a href="${item.RAW_INPUT}" target="_blank">View Input</a></td>
+          <td><a href="${item.ai_output}" target="_blank">View AI</a></td>
+          <td><a href="${item.manual}" target="_blank">View Manual</a></td>
+        `;
+        imageTableBody.appendChild(row);
+      });
+    }
+
+    // Apply filters
+    function applyFilters() {
+      displayImageData();
+    }
+
+    // Load data on page load
+    window.onload = fetchData;
+  </script>
+  
+  <!-- Include PapaParse library for CSV parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</body>
+</html>
