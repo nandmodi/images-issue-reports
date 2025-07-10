@@ -106,14 +106,19 @@
         <!-- Image view data will go here -->
       </tbody>
     </table>
+    <!-- Scrollable for lazy loading -->
+    <div id="loadMore" style="text-align: center; padding: 10px; cursor: pointer; background-color: #f2f2f2; border: 1px solid #ddd; border-radius: 5px;">Load More Images</div>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
     // Fetch CSV data from Google Sheets
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
     
     let data = [];
+    let startIndex = 0;
+    const batchSize = 10; // Number of images to load per click
 
     // Fetch the CSV and process it
     function fetchData() {
@@ -164,7 +169,9 @@
       const imageTableBody = document.querySelector("#imageTable tbody");
       imageTableBody.innerHTML = ""; // Clear existing data
 
-      filteredData.forEach(item => {
+      const nextBatch = filteredData.slice(startIndex, startIndex + batchSize);
+
+      nextBatch.forEach(item => {
         const row = document.createElement("tr");
         row.innerHTML = `
           <td><a href="${item.RAW_INPUT}" target="_blank" class="image-link"><img src="${item.RAW_INPUT}" alt="Input"></a></td>
@@ -173,18 +180,28 @@
         `;
         imageTableBody.appendChild(row);
       });
+
+      if (nextBatch.length < batchSize) {
+        document.getElementById("loadMore").style.display = "none"; // Hide "Load More" if no more images
+      } else {
+        document.getElementById("loadMore").style.display = "block"; // Show "Load More"
+      }
     }
 
     // Apply filters
     function applyFilters() {
+      startIndex = 0; // Reset the index on filter change
       displayImageData();
     }
+
+    // Load more images on click
+    document.getElementById("loadMore").addEventListener("click", function() {
+      startIndex += batchSize;
+      displayImageData();
+    });
 
     // Load data on page load
     window.onload = fetchData;
   </script>
-  
-  <!-- Include PapaParse library for CSV parsing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 </body>
 </html>
