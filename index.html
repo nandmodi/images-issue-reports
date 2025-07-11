@@ -97,11 +97,6 @@
 
   <div class="filters">
     <input type="text" id="filterDate" placeholder="Filter by Date">
-    <select id="filterType">
-      <option value="">Select Image Type</option>
-      <option value="Exterior">Exterior</option>
-      <option value="Interior">Interior</option>
-    </select>
     <select id="filterIssue">
       <option value="">Select Issue</option>
       <option value="Remove BG">Remove BG</option>
@@ -148,8 +143,7 @@ let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || []
     document.getElementById('lastUpdated').innerText = `Last updated: ${new Date(parseInt(lastUpdated)).toLocaleString()}`;
     return;
   }
-  $.get(sheetUrl, function (csv) {
-    const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+  
     data = parsed.data;
     cachedData = [...data];
     localStorage.setItem('cachedImageReviewData', JSON.stringify(cachedData));
@@ -189,10 +183,6 @@ let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || []
   });
   return summary;
 };
-      data.forEach(row => {
-        const key = row[fieldName] || "Other";
-        summary[key] = (summary[key] || 0) + 1;
-      });
       return summary;
     }
 
@@ -208,13 +198,11 @@ let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || []
 
     function applyFilters() {
   const dateVal = document.getElementById("filterDate").value.toLowerCase();
-  const typeVal = document.getElementById("filterType").value;
   const issueVal = document.getElementById("filterIssue").value;
   const entVal = document.getElementById("filterEnterprise").value;
 
   const filtered = data.filter(row => {
     return (!dateVal || (row.createdDate || '').toLowerCase().includes(dateVal)) &&
-           (!typeVal || row.image_category === typeVal) &&
            (!issueVal || row.rejected_comment === issueVal) &&
            (!entVal || row.enterprise_name === entVal);
   });
