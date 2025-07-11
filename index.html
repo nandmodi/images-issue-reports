@@ -46,19 +46,73 @@
       font-weight: 500;
     }
     
-    /* Dashboard Sections */
-    .dashboard-sections {
+    /* Filter Section */
+    .filter-section {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+      background: var(--white);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .filter-group label {
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--dark-gray);
+    }
+    
+    .filter-group input,
+    .filter-group select {
+      padding: 10px;
+      border: 1px solid var(--medium-gray);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .filter-actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: var(--white);
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
     
     /* Percentage Cards Section */
-    .percentage-cards {
+    .percentage-section {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
     
     .percentage-card {
@@ -88,7 +142,8 @@
       background: var(--white);
       border-radius: 8px;
       box-shadow: var(--shadow);
-      padding: 15px;
+      padding: 20px;
+      margin-bottom: 30px;
     }
     
     .image-section-header {
@@ -107,13 +162,13 @@
     .image-panel {
       background: var(--light-gray);
       border-radius: 6px;
-      padding: 10px;
+      padding: 15px;
       text-align: center;
     }
     
     .image-panel-header {
       font-weight: 500;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       color: var(--dark-gray);
     }
     
@@ -226,16 +281,18 @@
     }
     
     @media (max-width: 1200px) {
-      .percentage-cards {
-        grid-template-columns: repeat(3, 1fr);
+      .filter-section {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .percentage-section {
+        grid-template-columns: repeat(2, 1fr);
       }
     }
     
     @media (max-width: 768px) {
-      .percentage-cards {
-        grid-template-columns: 1fr;
-      }
-      
+      .filter-section,
+      .percentage-section,
       .image-panels {
         grid-template-columns: 1fr;
       }
@@ -246,68 +303,88 @@
   <div class="container">
     <h1>Image Review Dashboard</h1>
     
-    <div class="dashboard-sections">
-      <!-- Percentage Cards Section -->
-      <div class="percentage-cards">
-        <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Image Type</div>
-          <div class="percentage-card-body" id="imageTypeStats">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
-        
-        <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Issue Wise</div>
-          <div class="percentage-card-body" id="issueStats">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
-        
-        <div class="percentage-card">
-          <div class="percentage-card-header">Issue % AI Tag</div>
-          <div class="percentage-card-body" id="aiTagStats">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
-        
-        <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Enterprise</div>
-          <div class="percentage-card-body" id="enterpriseStats">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
-        
-        <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Sub Issue Wise</div>
-          <div class="percentage-card-body" id="subIssueStats">
-            <!-- Will be populated dynamically -->
-          </div>
-        </div>
+    <!-- Filter Section -->
+    <div class="filter-section">
+      <div class="filter-group">
+        <label for="filterDateFrom">Date Range (From)</label>
+        <input type="date" id="filterDateFrom">
       </div>
       
-      <!-- Image Section -->
-      <div class="image-section">
-        <div class="image-section-header">Image Section</div>
-        <div class="image-panels">
-          <div class="image-panel">
-            <div class="image-panel-header">Raw</div>
-            <div class="image-container" id="rawImage">
-              <img src="" alt="Raw Image" style="display: none;">
-            </div>
+      <div class="filter-group">
+        <label for="filterDateTo">Date Range (To)</label>
+        <input type="date" id="filterDateTo">
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterIssue">Issue</label>
+        <select id="filterIssue">
+          <option value="">All Issues</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterEnterprise">Enterprise</label>
+        <select id="filterEnterprise">
+          <option value="">All Enterprises</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
+        <button class="btn btn-danger" onclick="refreshData()">Refresh</button>
+      </div>
+    </div>
+    
+    <!-- Percentage Cards Section -->
+    <div class="percentage-section">
+      <div class="percentage-card">
+        <div class="percentage-card-header">Issue % Image Type</div>
+        <div class="percentage-card-body" id="imageTypeStats"></div>
+      </div>
+      
+      <div class="percentage-card">
+        <div class="percentage-card-header">Issue % Issue Wise</div>
+        <div class="percentage-card-body" id="issueStats"></div>
+      </div>
+      
+      <div class="percentage-card" style="grid-column: span 2;">
+        <div class="percentage-card-header">Issue % Sub Issue Wise</div>
+        <div class="percentage-card-body" id="subIssueStats"></div>
+      </div>
+      
+      <div class="percentage-card">
+        <div class="percentage-card-header">Issue % AI Tag</div>
+        <div class="percentage-card-body" id="aiTagStats"></div>
+      </div>
+      
+      <div class="percentage-card">
+        <div class="percentage-card-header">Issue % Enterprise</div>
+        <div class="percentage-card-body" id="enterpriseStats"></div>
+      </div>
+    </div>
+    
+    <!-- Image Section -->
+    <div class="image-section">
+      <div class="image-section-header">Image Section</div>
+      <div class="image-panels">
+        <div class="image-panel">
+          <div class="image-panel-header">Raw</div>
+          <div class="image-container" id="rawImage">
+            <img src="" alt="Raw Image" style="display: none;">
           </div>
-          
-          <div class="image-panel">
-            <div class="image-panel-header">AI</div>
-            <div class="image-container" id="aiImage">
-              <img src="" alt="AI Image" style="display: none;">
-            </div>
+        </div>
+        
+        <div class="image-panel">
+          <div class="image-panel-header">AI</div>
+          <div class="image-container" id="aiImage">
+            <img src="" alt="AI Image" style="display: none;">
           </div>
-          
-          <div class="image-panel">
-            <div class="image-panel-header">Manual</div>
-            <div class="image-container" id="manualImage">
-              <img src="" alt="Manual Image" style="display: none;">
-            </div>
+        </div>
+        
+        <div class="image-panel">
+          <div class="image-panel-header">Manual</div>
+          <div class="image-container" id="manualImage">
+            <img src="" alt="Manual Image" style="display: none;">
           </div>
         </div>
       </div>
@@ -331,16 +408,17 @@
     // Configuration
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 300000, // 5 minutes in milliseconds
+      refreshInterval: 300000,
       imageBaseUrl: "https://example.com/images/",
       
       // Field mappings
       fields: {
+        date: "createdDate",
         imageType: "image_category",
         issue: "mappedRejected_comment",
+        subIssue: "rejected_comment",
         aiTag: "ai_tag",
         enterprise: "enterprise_name",
-        subIssue: "rejected_comment",
         rawImage: "RAW_INPUT",
         aiImage: "ai_output",
         manualImage: "manual",
@@ -351,9 +429,9 @@
       statsCards: [
         { id: "imageTypeStats", field: "image_category", title: "Image Type" },
         { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
-        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" },
-        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" }
+        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
       ]
     };
     
@@ -369,6 +447,10 @@
       loaderText: document.getElementById("loaderText"),
       toast: document.getElementById("toast"),
       lastUpdated: document.getElementById("lastUpdated"),
+      filterDateFrom: document.getElementById("filterDateFrom"),
+      filterDateTo: document.getElementById("filterDateTo"),
+      filterIssue: document.getElementById("filterIssue"),
+      filterEnterprise: document.getElementById("filterEnterprise"),
       rawImage: document.querySelector("#rawImage img"),
       aiImage: document.querySelector("#aiImage img"),
       manualImage: document.querySelector("#manualImage img")
@@ -379,6 +461,14 @@
       showLoader("Loading dashboard...");
       await fetchData();
       setupAutoRefresh();
+      
+      // Set default date range (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
     }
     
     // Fetch data from Google Sheets
@@ -411,8 +501,16 @@
           return;
         }
         
+        // Format dates
+        allData.forEach(item => {
+          if (item[CONFIG.fields.date]) {
+            item.formattedDate = new Date(item[CONFIG.fields.date]);
+          }
+        });
+        
         filteredData = [...allData];
         renderDashboard();
+        populateFilters();
         loadCurrentImage();
         updateLastUpdated();
         showToast("Data loaded successfully");
@@ -467,6 +565,27 @@
       return summary;
     }
     
+    // Populate filters
+    function populateFilters() {
+      // Populate Issue filter
+      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
+      issueValues.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        elements.filterIssue.appendChild(option);
+      });
+      
+      // Populate Enterprise filter
+      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
+      enterpriseValues.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        elements.filterEnterprise.appendChild(option);
+      });
+    }
+    
     // Load current image
     function loadCurrentImage() {
       if (filteredData.length === 0) return;
@@ -494,6 +613,46 @@
       } else {
         elements.manualImage.style.display = 'none';
       }
+    }
+    
+    // Apply filters
+    function applyFilters() {
+      showLoader("Applying filters...");
+      
+      const dateFrom = elements.filterDateFrom.valueAsDate;
+      const dateTo = elements.filterDateTo.valueAsDate;
+      const issueFilter = elements.filterIssue.value;
+      const enterpriseFilter = elements.filterEnterprise.value;
+      
+      filteredData = allData.filter(row => {
+        // Date filter
+        if (dateFrom && row.formattedDate) {
+          if (row.formattedDate < dateFrom) return false;
+        }
+        if (dateTo && row.formattedDate) {
+          const endOfDay = new Date(dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (row.formattedDate > endOfDay) return false;
+        }
+        
+        // Issue filter
+        if (issueFilter && row[CONFIG.fields.issue] !== issueFilter) {
+          return false;
+        }
+        
+        // Enterprise filter
+        if (enterpriseFilter && row[CONFIG.fields.enterprise] !== enterpriseFilter) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      currentImageIndex = 0;
+      renderDashboard();
+      loadCurrentImage();
+      hideLoader();
+      showToast(`Showing ${filteredData.length} records`);
     }
     
     // Refresh data
