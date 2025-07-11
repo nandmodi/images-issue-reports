@@ -1,341 +1,537 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Image Review Dashboard</title>
+  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 20px;
-      background-color: #f9f9f9;
+    :root {
+      --primary-color: #4285f4;
+      --secondary-color: #34a853;
+      --danger-color: #ea4335;
+      --light-gray: #f5f5f5;
+      --medium-gray: #e0e0e0;
+      --dark-gray: #757575;
+      --white: #ffffff;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
-
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: var(--light-gray);
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
     h1 {
       text-align: center;
-      margin-bottom: 30px;
+      margin: 20px 0 30px;
+      color: var(--primary-color);
+      font-weight: 500;
     }
-
+    
+    /* Filter Section */
     .filters {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
+      gap: 15px;
       margin-bottom: 30px;
+      background: var(--white);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
     }
-
-    .filters select, .filters input[type="text"] {
-      padding: 8px;
-      width: 200px;
+    
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
     }
-
-    .filters button {
-      padding: 8px 16px;
-      background-color: #1a73e8;
-      color: white;
+    
+    .filter-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--dark-gray);
+    }
+    
+    .filter-group select, 
+    .filter-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--medium-gray);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .filter-actions {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
       border: none;
       border-radius: 4px;
+      font-weight: 500;
       cursor: pointer;
+      transition: all 0.2s;
     }
-
-    .grid-layout {
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: var(--white);
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    /* Dashboard Grid */
+    .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
+      margin-bottom: 30px;
     }
-
-    .summary-block {
-      background-color: #fff;
-      padding: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    
+    .card {
+      background: var(--white);
       border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
     }
-
-    .summary-block h2 {
-      font-size: 18px;
-      margin-bottom: 10px;
+    
+    .card-header {
+      padding: 15px 20px;
+      background: var(--primary-color);
+      color: var(--white);
+      font-weight: 500;
     }
-
+    
+    .card-body {
+      padding: 15px 20px;
+    }
+    
     table {
       width: 100%;
       border-collapse: collapse;
     }
-
+    
     th, td {
-      padding: 8px;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      background-color: #f2f2f2;
+      padding: 10px;
       text-align: left;
+      border-bottom: 1px solid var(--medium-gray);
     }
-
+    
+    th {
+      font-weight: 500;
+      color: var(--dark-gray);
+    }
+    
     .bar-cell {
       position: relative;
       height: 24px;
     }
-
+    
     .bar-cell span {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      background-color: #d1e3ff;
+      background-color: rgba(66, 133, 244, 0.2);
       z-index: 0;
     }
-
+    
     .bar-cell div {
       position: relative;
       z-index: 1;
       padding-left: 5px;
     }
-  </style>
-  <style>
+    
+    /* Loader and Toast */
     #loader {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.9);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-size: 1.5em;
-      z-index: 9999;
+      z-index: 1000;
       display: none;
     }
-
-    #toast {
-      visibility: hidden;
-      min-width: 250px;
-      margin-left: -125px;
-      background-color: #333;
-      color: #fff;
-      text-align: center;
-      border-radius: 4px;
-      padding: 12px;
-      position: fixed;
-      z-index: 10000;
-      left: 50%;
-      bottom: 30px;
-      font-size: 14px;
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(66, 133, 244, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
     }
-
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #333;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 4px;
+      z-index: 1001;
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    
     #toast.show {
       visibility: visible;
-      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+      opacity: 1;
     }
-
-    @keyframes fadein {
-      from { bottom: 0; opacity: 0; }
-      to { bottom: 30px; opacity: 1; }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      color: var(--dark-gray);
+      font-size: 14px;
     }
-
-    @keyframes fadeout {
-      from { bottom: 30px; opacity: 1; }
-      to { bottom: 0; opacity: 0; }
+    
+    @media (max-width: 768px) {
+      .filters {
+        flex-direction: column;
+      }
+      
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="loader">
-  <div id="loaderText">Syncing data, please wait... 0%</div>
-</div>
-  <div id="toast">Auto-refreshed from Google Sheet</div>
-  <h1>Image Review Dashboard</h1>
-
-  <div class="filters">
-  <select id="filterDate">
-    <option value="">Select Date</option>
-  </select>
-  <select id="filterIssue">
-    <option value="">Select Issue</option>
-  </select>
-  <select id="filterEnterprise">
-    <option value="">Select Enterprise</option>
-  </select>
-  <button onclick="applyFilters()">Apply Filters</button>
-  </div>
-
-  <div class="grid-layout" id="summaryGrid">
-    <!-- Summary sections will be inserted here -->
-<!--
-  Section 1: Category-wise Issue Count
-  Section 2: Rejected Comment (Grouped + Detailed)
-  Section 3: AI Tag Distribution
-  Section 4: Enterprise-wise Issue Count
--->
-    <!--
-      Section 1: Category-wise Issue Count
-      Section 2: Rejected Comment (Grouped + Detailed)
-      Section 3: AI Tag Distribution
-      Section 4: Enterprise-wise Issue Count
-    -->
-  </div>
-  <div style="text-align:center; margin-top: 20px;">
-  <button onclick="refreshCache()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Data</button>
-  <p id="lastUpdated" style="margin-top: 5px; font-size: 0.9em; color: gray;"></p>
-</div>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-  <script>
-    const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
-    let data = [];
-let cachedData = [];
-
-    function showToast(message) {
-  const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.className = "show";
-  setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-}
-
-function fetchData() {
-  document.getElementById("loader").style.display = "flex";
-  let percent = 0;
-  const loaderText = document.getElementById("loaderText");
-  const progressInterval = setInterval(() => {
-    percent += 5;
-    if (percent >= 95) percent = 95;
-    loaderText.innerText = `Syncing data, please wait... ${percent}%`;
-  }, 200);
-  
-
-  $.get(sheetUrl, function (csv) {
-    const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
-    data = parsed.data;
+  <div class="container">
+    <h1>Image Review Dashboard</h1>
     
-    const totalRows = data.length;
-    let loaded = 0;
-    const chunkSize = Math.ceil(totalRows / 20);
-    const loaderText = document.getElementById("loaderText");
-    function simulateProgress() {
-      if (loaded >= totalRows) {
-        loaderText.innerText = 'Syncing data, please wait... 100%';
-        setTimeout(() => {
-          document.getElementById("loader").style.display = "none";
-        }, 300);
-        renderSummary();
-      populateFilters();
-      document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
-      showToast('Auto-refreshed from Google Sheet');
+    <!-- Filters Section -->
+    <div class="filters">
+      <div class="filter-group">
+        <label for="filterDate">Date</label>
+        <select id="filterDate">
+          <option value="">All Dates</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterIssue">Issue Type</label>
+        <select id="filterIssue">
+          <option value="">All Issues</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="filterEnterprise">Enterprise</label>
+        <select id="filterEnterprise">
+          <option value="">All Enterprises</option>
+        </select>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn btn-danger" onclick="refreshData()">Refresh Data</button>
+      </div>
+    </div>
+    
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid" id="dashboardGrid">
+      <!-- Cards will be dynamically inserted here -->
+    </div>
+    
+    <div class="footer">
+      <p id="lastUpdated">Last updated: Never</p>
+    </div>
+  </div>
+  
+  <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loaderText">Loading data...</div>
+  </div>
+  
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+  
+  <script>
+    // Configuration
+    const CONFIG = {
+      sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
+      refreshInterval: 300000, // 5 minutes in milliseconds
+      cards: [
+        { title: "Image Categories", field: "image_category" },
+        { title: "Rejection Reasons (Grouped)", field: "rejected_comment_group" },
+        { title: "Rejection Reasons (Detailed)", field: "rejected_comment" },
+        { title: "AI Tags", field: "ai_tag" },
+        { title: "Enterprises", field: "enterprise_name" }
+      ]
+    };
+    
+    // Global variables
+    let allData = [];
+    let filteredData = [];
+    let refreshTimer = null;
+    
+    // DOM Elements
+    const elements = {
+      loader: document.getElementById("loader"),
+      loaderText: document.getElementById("loaderText"),
+      toast: document.getElementById("toast"),
+      dashboardGrid: document.getElementById("dashboardGrid"),
+      lastUpdated: document.getElementById("lastUpdated"),
+      filterDate: document.getElementById("filterDate"),
+      filterIssue: document.getElementById("filterIssue"),
+      filterEnterprise: document.getElementById("filterEnterprise")
+    };
+    
+    // Initialize the dashboard
+    async function initDashboard() {
+      showLoader("Loading dashboard...");
+      await fetchData();
+      setupAutoRefresh();
+    }
+    
+    // Fetch data from Google Sheets
+    async function fetchData() {
+      try {
+        const response = await $.ajax({
+          url: CONFIG.sheetUrl,
+          type: 'GET',
+          dataType: 'text'
+        });
+        
+        const parsed = Papa.parse(response, {
+          header: true,
+          skipEmptyLines: true,
+          transform: (value) => value.trim()
+        });
+        
+        if (parsed.errors.length > 0) {
+          console.error("Parsing errors:", parsed.errors);
+          showToast("Error parsing data", true);
+          return;
+        }
+        
+        allData = parsed.data.filter(row => 
+          Object.values(row).some(val => val && val.toString().trim() !== "")
+        );
+        
+        if (allData.length === 0) {
+          showToast("No valid data found", true);
+          return;
+        }
+        
+        filteredData = [...allData];
+        renderDashboard();
+        populateFilters();
+        updateLastUpdated();
+        showToast("Data loaded successfully");
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        showToast("Error loading data", true);
+      } finally {
+        hideLoader();
+      }
+    }
+    
+    // Render the dashboard with cards
+    function renderDashboard(data = filteredData) {
+      elements.dashboardGrid.innerHTML = '';
+      
+      if (data.length === 0) {
+        elements.dashboardGrid.innerHTML = `
+          <div class="card" style="grid-column: 1 / -1">
+            <div class="card-header">No Data Available</div>
+            <div class="card-body">
+              <p>No records match the current filters.</p>
+            </div>
+          </div>
+        `;
         return;
       }
-      loaded += chunkSize;
-      const pct = Math.min(Math.floor((loaded / totalRows) * 100), 100);
-      loaderText.innerText = `Syncing data, please wait... ${pct}%`;
-      setTimeout(simulateProgress, 100);
-    }
-    simulateProgress();
-    document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
-    clearInterval(progressInterval);
-    loaderText.innerText = 'Syncing data, please wait... 100%';
-    setTimeout(() => {
-      document.getElementById("loader").style.display = "none";
-    }, 300);
-    showToast('Auto-refreshed from Google Sheet');
-  });
-}
-        
-
-    function createSummaryBlock(title, summaryMap) {
-      let html = `<div class='summary-block'><h2>${title}</h2><table>`;
-      Object.entries(summaryMap).forEach(([key, count]) => {
-        const pct = ((count / data.length) * 100).toFixed(2);
-        html += `<tr><td>${key}</td><td>${count}</td><td class='bar-cell'><span style='width:${pct}%'>&nbsp;</span><div>${pct}%</div></td></tr>`;
+      
+      CONFIG.cards.forEach(card => {
+        const summary = summarizeData(data, card.field);
+        elements.dashboardGrid.appendChild(createCard(card.title, summary));
       });
-      html += `</table></div>`;
-      return html;
     }
-
-    function summarizeByField(fieldName, sourceData = data) {
-  const summary = {};
-  sourceData.forEach(row => {
-    const key = row[fieldName] || "Other";
-    summary[key] = (summary[key] || 0) + 1;
-  });
-  return summary;
-}
-
-    function renderSummary() {
-  const grid = document.getElementById("summaryGrid");
-  grid.innerHTML =
-    createSummaryBlock("Category", summarizeByField("image_category")) +
-    createSummaryBlock("Rejected Comment (Grouped)", summarizeByField("rejected_comment_group")) +
-    createSummaryBlock("Rejected Comment (Detailed)", summarizeByField("rejected_comment")) +
-    createSummaryBlock("AI Tag", summarizeByField("ai_tag")) +
-    createSummaryBlock("Enterprise", summarizeByField("enterprise_name"));
-}
-
+    
+    // Create a summary card
+    function createCard(title, summaryData) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      
+      let tableHTML = '<table>';
+      Object.entries(summaryData).forEach(([key, count]) => {
+        const percentage = ((count / filteredData.length) * 100).toFixed(1);
+        tableHTML += `
+          <tr>
+            <td>${key || 'Unknown'}</td>
+            <td>${count}</td>
+            <td class="bar-cell">
+              <span style="width: ${percentage}%"></span>
+              <div>${percentage}%</div>
+            </td>
+          </tr>
+        `;
+      });
+      tableHTML += '</table>';
+      
+      card.innerHTML = `
+        <div class="card-header">${title}</div>
+        <div class="card-body">${tableHTML}</div>
+      `;
+      
+      return card;
+    }
+    
+    // Summarize data by field
+    function summarizeData(data, field) {
+      const summary = {};
+      
+      data.forEach(row => {
+        const value = row[field] || 'Unknown';
+        summary[value] = (summary[value] || 0) + 1;
+      });
+      
+      // Sort by count descending
+      return Object.fromEntries(
+        Object.entries(summary).sort((a, b) => b[1] - a[1])
+      );
+    }
+    
+    // Populate filter dropdowns
+    function populateFilters() {
+      populateFilter('filterDate', 'createdDate');
+      populateFilter('filterIssue', 'rejected_comment');
+      populateFilter('filterEnterprise', 'enterprise_name');
+    }
+    
+    function populateFilter(filterId, field) {
+      const select = document.getElementById(filterId);
+      const options = new Set();
+      
+      // Keep the first option (All)
+      const firstOption = select.options[0];
+      select.innerHTML = '';
+      select.appendChild(firstOption);
+      
+      allData.forEach(row => {
+        if (row[field]) {
+          options.add(row[field]);
+        }
+      });
+      
+      Array.from(options).sort().forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+    }
+    
+    // Apply filters
     function applyFilters() {
-  document.getElementById("loader").style.display = "flex";
-  const dateVal = document.getElementById("filterDate").value.toLowerCase();
-  const issueVal = document.getElementById("filterIssue").value;
-  const entVal = document.getElementById("filterEnterprise").value;
-
-  const filtered = data.filter(row => {
-    return (!dateVal || (row.createdDate || '').toLowerCase().includes(dateVal)) &&
-           (!issueVal || row.rejected_comment === issueVal) &&
-           (!entVal || row.enterprise_name === entVal);
-  });
-
-  const grid = document.getElementById("summaryGrid");
-  grid.innerHTML =
-    createSummaryBlock("Category", summarizeByField("image_category", filtered)) +
-    createSummaryBlock("Rejected Comment (Grouped)", summarizeByField("rejected_comment_group", filtered)) +
-    createSummaryBlock("Rejected Comment (Detailed)", summarizeByField("rejected_comment", filtered)) +
-    createSummaryBlock("AI Tag", summarizeByField("ai_tag", filtered)) +
-    createSummaryBlock("Enterprise", summarizeByField("enterprise_name", filtered));
-  document.getElementById("loader").style.display = "none";
-}
-
-function refreshCache() {
-  document.getElementById("loader").style.display = "flex";
-  
-  setTimeout(() => location.reload(), 800);
-}
-
-function populateFilters() {
-  const dateSet = new Set();
-  const issueSet = new Set();
-  const enterpriseSet = new Set();
-
-  data.forEach(row => {
-    if (row.createdDate) dateSet.add(row.createdDate);
-    if (row.rejected_comment) issueSet.add(row.rejected_comment);
-    if (row.enterprise_name) enterpriseSet.add(row.enterprise_name);
-  });
-
-  const dateSelect = document.getElementById("filterDate");
-  const issueSelect = document.getElementById("filterIssue");
-  const enterpriseSelect = document.getElementById("filterEnterprise");
-
-  [...dateSet].sort().forEach(val => {
-    const opt = document.createElement("option");
-    opt.value = val;
-    opt.text = val;
-    dateSelect.appendChild(opt);
-  });
-  [...issueSet].sort().forEach(val => {
-    const opt = document.createElement("option");
-    opt.value = val;
-    opt.text = val;
-    issueSelect.appendChild(opt);
-  });
-  [...enterpriseSet].sort().forEach(val => {
-    const opt = document.createElement("option");
-    opt.value = val;
-    opt.text = val;
-    enterpriseSelect.appendChild(opt);
-  });
-}
-
-window.onload = () => {
-  fetchData();
-};
+      showLoader("Applying filters...");
+      
+      const dateFilter = elements.filterDate.value.toLowerCase();
+      const issueFilter = elements.filterIssue.value;
+      const enterpriseFilter = elements.filterEnterprise.value;
+      
+      filteredData = allData.filter(row => {
+        const matchesDate = !dateFilter || 
+          (row.createdDate && row.createdDate.toLowerCase().includes(dateFilter));
+        const matchesIssue = !issueFilter || row.rejected_comment === issueFilter;
+        const matchesEnterprise = !enterpriseFilter || row.enterprise_name === enterpriseFilter;
+        
+        return matchesDate && matchesIssue && matchesEnterprise;
+      });
+      
+      renderDashboard();
+      hideLoader();
+      showToast(`Showing ${filteredData.length} records`);
+    }
+    
+    // Refresh data
+    function refreshData() {
+      clearTimeout(refreshTimer);
+      showLoader("Refreshing data...");
+      fetchData();
+    }
+    
+    // Set up auto-refresh
+    function setupAutoRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshData();
+        setupAutoRefresh();
+      }, CONFIG.refreshInterval);
+    }
+    
+    // UI Helpers
+    function showLoader(message) {
+      elements.loaderText.textContent = message;
+      elements.loader.style.display = 'flex';
+    }
+    
+    function hideLoader() {
+      elements.loader.style.display = 'none';
+    }
+    
+    function showToast(message, isError = false) {
+      elements.toast.textContent = message;
+      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+      elements.toast.classList.add('show');
+      
+      setTimeout(() => {
+        elements.toast.classList.remove('show');
+      }, 3000);
+    }
+    
+    function updateLastUpdated() {
+      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
+    }
+    
+    // Initialize the dashboard when the page loads
+    document.addEventListener('DOMContentLoaded', initDashboard);
+  </script>
 </body>
 </html>
-  
