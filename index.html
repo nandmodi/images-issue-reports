@@ -8,42 +8,76 @@
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 20px;
+      background-color: #f9f9f9;
     }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .filters select, .filters input[type="text"] {
+      padding: 8px;
+      width: 200px;
+    }
+
+    .filters button {
+      padding: 8px 16px;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    table, th, td {
-      border: 1px solid #ddd;
-      padding: 8px;
+
+    th, td {
+      padding: 12px;
       text-align: left;
+      border-bottom: 1px solid #ddd;
     }
+
     th {
       background-color: #f2f2f2;
     }
-    select, input[type="text"] {
-      margin: 10px 0;
-      padding: 8px;
-      width: 200px;
+
+    .image-link img {
+      height: 150px;
+      width: auto;
+      border-radius: 4px;
     }
-    .filters {
-      display: flex;
-      justify-content: flex-start;
+
+    #loadMore {
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      margin-top: 10px;
     }
+
     .block {
       margin-top: 30px;
     }
-    /* Scrollable Table for Summary */
-    #summaryTable {
-      max-height: 300px;
-      overflow-y: auto;
-      display: block;
-    }
-    /* Style for Images to Increase Height but Maintain Aspect Ratio */
-    .image-link img {
-      height: 200px;
-      width: auto;
+
+    #summaryTable tbody tr:hover {
+      background-color: #f1f1f1;
     }
   </style>
 </head>
@@ -69,12 +103,11 @@
     <select id="filterEnterprise">
       <option value="">Select Enterprise</option>
       <option value="Dealer Vision">Dealer Vision</option>
-      <!-- Add more enterprise options here if needed -->
     </select>
     <button onclick="applyFilters()">Apply Filters</button>
   </div>
 
-  <!-- First Block: Summary (Issue Wise Count & Percentage) -->
+  <!-- Summary Table -->
   <div class="block" id="summaryBlock">
     <h2>Issue Wise Summary</h2>
     <table id="summaryTable">
@@ -85,15 +118,13 @@
           <th>Percentage</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Summary data will go here -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 
-  <!-- Second Block: View Image -->
+  <!-- Image Viewer -->
   <div class="block" id="viewImageBlock">
-    <h2>View Image</h2>
+    <h2>Image Comparison</h2>
     <table id="imageTable">
       <thead>
         <tr>
@@ -102,108 +133,82 @@
           <th>Manual</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- Image view data will go here -->
-      </tbody>
+      <tbody></tbody>
     </table>
-    <!-- Scrollable for lazy loading -->
-    <div id="loadMore" style="text-align: center; padding: 10px; cursor: pointer; background-color: #f2f2f2; border: 1px solid #ddd; border-radius: 5px;">Load More Images</div>
+    <button id="loadMore">Load More Images</button>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
-    // Fetch CSV data from Metabase Public CSV Link using CORS Proxy
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
-
-    
     let data = [];
     let startIndex = 0;
-    const batchSize = 10; // Number of images to load per click
+    const batchSize = 10;
 
-    // Fetch the CSV and process it
     function fetchData() {
       $.get(sheetUrl, function (csv) {
-        const parsedData = Papa.parse(csv, { header: true, skipEmptyLines: true }).data;
-        data = parsedData;
+        const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+        data = parsed.data;
         displaySummary();
         displayImageData();
-      }).fail(function () {
-        alert("Error fetching data. Please check your CORS settings or proxy configuration.");
       });
     }
 
-    // Display Issue-wise Summary
     function displaySummary() {
-      const summaryData = {};
-      
-      // Populate issue counts
-      data.forEach(item => {
-        const issue = item.rejected_comment || "Other";
-        if (!summaryData[issue]) {
-          summaryData[issue] = 0;
-        }
-        summaryData[issue]++;
+      const summary = {};
+      data.forEach(row => {
+        const key = row.rejected_comment || "Other";
+        summary[key] = (summary[key] || 0) + 1;
       });
 
-      const summaryTableBody = document.querySelector("#summaryTable tbody");
-      summaryTableBody.innerHTML = ""; // Clear existing data
-
-      Object.keys(summaryData).forEach(issue => {
-        const count = summaryData[issue];
+      const tbody = document.querySelector("#summaryTable tbody");
+      tbody.innerHTML = "";
+      Object.entries(summary).forEach(([issue, count]) => {
         const percentage = ((count / data.length) * 100).toFixed(2);
-
-        const row = document.createElement("tr");
-        row.innerHTML = `<td>${issue}</td><td>${count}</td><td>${percentage}%</td>`;
-        summaryTableBody.appendChild(row);
+        tbody.innerHTML += `<tr><td>${issue}</td><td>${count}</td><td>${percentage}%</td></tr>`;
       });
     }
 
-    // Display Image Data based on selected filters
     function displayImageData() {
-      const filteredData = data.filter(item => {
-        const dateMatch = !document.getElementById("filterDate").value || item.createdDate.includes(document.getElementById("filterDate").value);
-        const typeMatch = !document.getElementById("filterType").value || item.image_category === document.getElementById("filterType").value;
-        const issueMatch = !document.getElementById("filterIssue").value || item.rejected_comment === document.getElementById("filterIssue").value;
-        const enterpriseMatch = !document.getElementById("filterEnterprise").value || item.enterprise_name === document.getElementById("filterEnterprise").value;
-        return dateMatch && typeMatch && issueMatch && enterpriseMatch;
+      const dateVal = document.getElementById("filterDate").value;
+      const typeVal = document.getElementById("filterType").value;
+      const issueVal = document.getElementById("filterIssue").value;
+      const entVal = document.getElementById("filterEnterprise").value;
+
+      const filtered = data.filter(row => {
+        return (!dateVal || row.createdDate.includes(dateVal)) &&
+               (!typeVal || row.image_category === typeVal) &&
+               (!issueVal || row.rejected_comment === issueVal) &&
+               (!entVal || row.enterprise_name === entVal);
       });
 
-      const imageTableBody = document.querySelector("#imageTable tbody");
-      imageTableBody.innerHTML = ""; // Clear existing data
+      const tbody = document.querySelector("#imageTable tbody");
+      if (startIndex === 0) tbody.innerHTML = "";
 
-      const nextBatch = filteredData.slice(startIndex, startIndex + batchSize);
-
-      nextBatch.forEach(item => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td><a href="${item.RAW_INPUT}" target="_blank" class="image-link"><img src="${item.RAW_INPUT}" alt="Input"></a></td>
-          <td><a href="${item.ai_output}" target="_blank" class="image-link"><img src="${item.ai_output}" alt="AI"></a></td>
-          <td><a href="${item.manual}" target="_blank" class="image-link"><img src="${item.manual}" alt="Manual"></a></td>
-        `;
-        imageTableBody.appendChild(row);
+      const batch = filtered.slice(startIndex, startIndex + batchSize);
+      batch.forEach(row => {
+        tbody.innerHTML += `
+          <tr>
+            <td><a href="${row.RAW_INPUT}" target="_blank" class="image-link"><img src="${row.RAW_INPUT}" /></a></td>
+            <td><a href="${row.ai_output}" target="_blank" class="image-link"><img src="${row.ai_output}" /></a></td>
+            <td><a href="${row.manual}" target="_blank" class="image-link"><img src="${row.manual}" /></a></td>
+          </tr>`;
       });
 
-      if (nextBatch.length < batchSize) {
-        document.getElementById("loadMore").style.display = "none"; // Hide "Load More" if no more images
-      } else {
-        document.getElementById("loadMore").style.display = "block"; // Show "Load More"
-      }
+      document.getElementById("loadMore").style.display = (startIndex + batchSize >= filtered.length) ? "none" : "block";
     }
 
-    // Apply filters
     function applyFilters() {
-      startIndex = 0; // Reset the index on filter change
+      startIndex = 0;
       displayImageData();
     }
 
-    // Load more images on click
     document.getElementById("loadMore").addEventListener("click", function() {
       startIndex += batchSize;
       displayImageData();
     });
 
-    // Load data on page load
     window.onload = fetchData;
   </script>
 </body>
