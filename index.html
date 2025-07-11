@@ -92,29 +92,80 @@
       padding-left: 5px;
     }
   </style>
+  <style>
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5em;
+      z-index: 9999;
+      display: none;
+    }
+
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      margin-left: -125px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 12px;
+      position: fixed;
+      z-index: 10000;
+      left: 50%;
+      bottom: 30px;
+      font-size: 14px;
+    }
+
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+    @keyframes fadein {
+      from { bottom: 0; opacity: 0; }
+      to { bottom: 30px; opacity: 1; }
+    }
+
+    @keyframes fadeout {
+      from { bottom: 30px; opacity: 1; }
+      to { bottom: 0; opacity: 0; }
+    }
+  </style>
 </head>
 <body>
+  <div id="loader">Syncing data, please wait...</div>
+  <div id="toast">Auto-refreshed from Google Sheet</div>
   <h1>Image Review Dashboard</h1>
 
   <div class="filters">
-    <input type="text" id="filterDate" placeholder="Filter by Date">
-    <select id="filterIssue">
-      <option value="">Select Issue</option>
-      <option value="Remove BG">Remove BG</option>
-      <option value="See Through">See Through</option>
-      <option value="Other">Other</option>
-      <option value="InputSwap">InputSwap</option>
-      <option value="Shadow & Reflection">Shadow & Reflection</option>
-    </select>
-    <select id="filterEnterprise">
-      <option value="">Select Enterprise</option>
-      <option value="Dealer Vision">Dealer Vision</option>
-    </select>
-    <button onclick="applyFilters()">Apply Filters</button>
+  <select id="filterDate">
+    <option value="">Select Date</option>
+  </select>
+  <select id="filterIssue">
+    <option value="">Select Issue</option>
+  </select>
+  <select id="filterEnterprise">
+    <option value="">Select Enterprise</option>
+  </select>
+  <button onclick="applyFilters()">Apply Filters</button>
   </div>
 
   <div class="grid-layout" id="summaryGrid">
     <!-- Summary sections will be inserted here -->
+<!--
+  Section 1: Category-wise Issue Count
+  Section 2: Rejected Comment (Grouped + Detailed)
+  Section 3: AI Tag Distribution
+  Section 4: Enterprise-wise Issue Count
+-->
     <!--
       Section 1: Category-wise Issue Count
       Section 2: Rejected Comment (Grouped + Detailed)
@@ -123,7 +174,6 @@
     -->
   </div>
   <div style="text-align:center; margin-top: 20px;">
-  <button onclick="downloadData()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Download All Data</button>
   <button onclick="refreshCache()" style="padding: 10px 20px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Data</button>
   <p id="lastUpdated" style="margin-top: 5px; font-size: 0.9em; color: gray;"></p>
 </div>
@@ -134,11 +184,20 @@
     let data = [];
 let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || [];
 
-    function fetchData() {
+    function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.className = "show";
+  setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+}
+
+function fetchData() {
+  document.getElementById("loader").style.display = "flex";
   const lastUpdated = localStorage.getItem('imageReviewDataTimestamp');
   if (cachedData.length > 0 && lastUpdated) {
     data = cachedData;
     renderSummary();
+    document.getElementById("loader").style.display = "none";
     document.getElementById('lastUpdated').innerText = `Last updated: ${new Date(parseInt(lastUpdated)).toLocaleString()}`;
     return;
   }
@@ -151,6 +210,7 @@ let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || []
     localStorage.setItem('imageReviewDataTimestamp', Date.now());
     renderSummary();
     document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
+    showToast('Auto-refreshed from Google Sheet');
   });
 }
         
@@ -204,16 +264,7 @@ let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || []
     createSummaryBlock("Enterprise", summarizeByField("enterprise_name", filtered));
 }
 
-    function downloadData() {
-  if (!data.length) return alert('No data to download');
-  const csv = Papa.unparse(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'image_review_data.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+    
 }
 
 function refreshCache() {
@@ -222,7 +273,54 @@ function refreshCache() {
   location.reload();
 }
 
-window.onload = fetchData;
+function populateFilters() {
+  const dateSet = new Set();
+  const issueSet = new Set();
+  const enterpriseSet = new Set();
+
+  data.forEach(row => {
+    if (row.createdDate) dateSet.add(row.createdDate);
+    if (row.rejected_comment) issueSet.add(row.rejected_comment);
+    if (row.enterprise_name) enterpriseSet.add(row.enterprise_name);
+  });
+
+  const dateSelect = document.getElementById("filterDate");
+  const issueSelect = document.getElementById("filterIssue");
+  const enterpriseSelect = document.getElementById("filterEnterprise");
+
+  [...dateSet].sort().forEach(val => {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.text = val;
+    dateSelect.appendChild(opt);
+  });
+  [...issueSet].sort().forEach(val => {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.text = val;
+    issueSelect.appendChild(opt);
+  });
+  [...enterpriseSet].sort().forEach(val => {
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.text = val;
+    enterpriseSelect.appendChild(opt);
+  });
+}
+
+window.onload = () => {
+  const maxAge = 1000 * 60 * 60 * 6; // 6 hours in milliseconds
+  const lastUpdated = parseInt(localStorage.getItem('imageReviewDataTimestamp')) || 0;
+  const now = Date.now();
+
+  if (now - lastUpdated > maxAge) {
+    localStorage.removeItem('cachedImageReviewData');
+    localStorage.removeItem('imageReviewDataTimestamp');
+  }
+
+  fetchData();
+  setTimeout(populateFilters, 300); // delay to ensure data is fetched
+};
   </script>
 </body>
 </html>
