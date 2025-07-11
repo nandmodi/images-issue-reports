@@ -76,6 +76,9 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding-right: 5px;
     }
     
     /* Dashboard Grid */
@@ -169,16 +172,29 @@
     .image-container {
       height: 300px;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       background: var(--light-gray);
       padding: 20px;
+      overflow-y: auto;
     }
     
-    .image-container img {
+    .image-item {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .image-item img {
       max-width: 100%;
-      max-height: 100%;
+      max-height: 150px;
       object-fit: contain;
+      margin-bottom: 5px;
+      border: 1px solid var(--medium-gray);
+    }
+    
+    .image-item p {
+      font-size: 12px;
+      color: var(--dark-gray);
     }
     
     /* Loader and Toast */
@@ -343,22 +359,22 @@
     <div class="image-section">
       <div class="image-panel">
         <div class="image-panel-header">Raw</div>
-        <div class="image-container" id="rawImage">
-          <img src="" alt="Raw Image" style="display: none;">
+        <div class="image-container" id="rawImages">
+          <!-- Will be populated dynamically -->
         </div>
       </div>
       
       <div class="image-panel">
         <div class="image-panel-header">AI</div>
-        <div class="image-container" id="aiImage">
-          <img src="" alt="AI Image" style="display: none;">
+        <div class="image-container" id="aiImages">
+          <!-- Will be populated dynamically -->
         </div>
       </div>
       
       <div class="image-panel">
         <div class="image-panel-header">Manual</div>
-        <div class="image-container" id="manualImage">
-          <img src="" alt="Manual Image" style="display: none;">
+        <div class="image-container" id="manualImages">
+          <!-- Will be populated dynamically -->
         </div>
       </div>
     </div>
@@ -383,6 +399,7 @@
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
       refreshInterval: 300000, // 5 minutes in milliseconds
       imageBaseUrl: "https://example.com/images/", // Base URL for images
+      itemsToShow: 10, // Number of items to show initially
       
       // Field mappings
       fields: {
@@ -393,7 +410,8 @@
         enterprise: "enterprise_name",
         rawImage: "RAW_INPUT",
         aiImage: "ai_output",
-        manualImage: "manual"
+        manualImage: "manual",
+        imageId: "image_id"
       },
       
       // Filter configuration
@@ -418,7 +436,6 @@
     // Global variables
     let allData = [];
     let filteredData = [];
-    let currentImageId = null;
     let refreshTimer = null;
     
     // DOM Elements
@@ -427,9 +444,9 @@
       loaderText: document.getElementById("loaderText"),
       toast: document.getElementById("toast"),
       lastUpdated: document.getElementById("lastUpdated"),
-      rawImage: document.querySelector("#rawImage img"),
-      aiImage: document.querySelector("#aiImage img"),
-      manualImage: document.querySelector("#manualImage img")
+      rawImages: document.getElementById("rawImages"),
+      aiImages: document.getElementById("aiImages"),
+      manualImages: document.getElementById("manualImages")
     };
     
     // Initialize the dashboard
@@ -475,10 +492,8 @@
         updateLastUpdated();
         showToast("Data loaded successfully");
         
-        // Load first image by default
-        if (allData.length > 0) {
-          loadImage(allData[0]);
-        }
+        // Load images
+        loadImages();
       } catch (error) {
         console.error("Error fetching data:", error);
         showToast("Error loading data", true);
@@ -495,20 +510,16 @@
         const summary = summarizeData(data, card.field);
         container.innerHTML = createStatsTable(summary, data.length);
       });
-      
-      // Update image display if current image is filtered out
-      if (currentImageId) {
-        const currentImage = data.find(item => item.image_id === currentImageId);
-        if (!currentImage && data.length > 0) {
-          loadImage(data[0]);
-        }
-      }
     }
     
-    // Create stats table
+    // Create stats table with limited rows
     function createStatsTable(summaryData, totalCount) {
+      const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
+      
       let html = '<table>';
-      Object.entries(summaryData).forEach(([key, count]) => {
+      
+      // Show first 10 items
+      items.slice(0, CONFIG.itemsToShow).forEach(([key, count]) => {
         const percentage = ((count / totalCount) * 100).toFixed(1);
         html += `
           <tr>
@@ -521,6 +532,36 @@
           </tr>
         `;
       });
+      
+      // Show "View More" if there are more items
+      if (items.length > CONFIG.itemsToShow) {
+        html += `
+          <tr>
+            <td colspan="3" style="text-align: center; color: var(--primary-color); cursor: pointer;"
+                onclick="this.parentNode.querySelector('.hidden-items').style.display='table-row-group'; this.style.display='none'">
+              + ${items.length - CONFIG.itemsToShow} more items
+            </td>
+          </tr>
+          <tbody class="hidden-items" style="display: none;">
+        `;
+        
+        items.slice(CONFIG.itemsToShow).forEach(([key, count]) => {
+          const percentage = ((count / totalCount) * 100).toFixed(1);
+          html += `
+            <tr>
+              <td>${key || 'Unknown'}</td>
+              <td>${count}</td>
+              <td class="bar-cell">
+                <span style="width: ${percentage}%"></span>
+                <div>${percentage}%</div>
+              </td>
+            </tr>
+          `;
+        });
+        
+        html += '</tbody>';
+      }
+      
       html += '</table>';
       return html;
     }
@@ -534,10 +575,7 @@
         summary[value] = (summary[value] || 0) + 1;
       });
       
-      // Sort by count descending
-      return Object.fromEntries(
-        Object.entries(summary).sort((a, b) => b[1] - a[1])
-      );
+      return summary;
     }
     
     // Populate filters
@@ -581,35 +619,89 @@
       });
       
       renderDashboard();
+      loadImages();
       hideLoader();
       showToast(`Showing ${filteredData.length} records`);
     }
     
-    // Load image
-    function loadImage(data) {
-      currentImageId = data.image_id;
+    // Load images with limited initial display
+    function loadImages() {
+      elements.rawImages.innerHTML = '';
+      elements.aiImages.innerHTML = '';
+      elements.manualImages.innerHTML = '';
       
-      // Update image displays
-      if (data[CONFIG.fields.rawImage]) {
-        elements.rawImage.src = CONFIG.imageBaseUrl + data[CONFIG.fields.rawImage];
-        elements.rawImage.style.display = 'block';
-      } else {
-        elements.rawImage.style.display = 'none';
-      }
+      // Show first 10 images with "View More" option
+      const itemsToShow = filteredData.slice(0, CONFIG.itemsToShow);
+      const remainingItems = filteredData.slice(CONFIG.itemsToShow);
       
-      if (data[CONFIG.fields.aiImage]) {
-        elements.aiImage.src = CONFIG.imageBaseUrl + data[CONFIG.fields.aiImage];
-        elements.aiImage.style.display = 'block';
-      } else {
-        elements.aiImage.style.display = 'none';
-      }
+      // Display initial images
+      itemsToShow.forEach(item => {
+        addImageItem(item);
+      });
       
-      if (data[CONFIG.fields.manualImage]) {
-        elements.manualImage.src = CONFIG.imageBaseUrl + data[CONFIG.fields.manualImage];
-        elements.manualImage.style.display = 'block';
-      } else {
-        elements.manualImage.style.display = 'none';
+      // Add "View More" button if there are more items
+      if (remainingItems.length > 0) {
+        const viewMoreBtn = document.createElement('div');
+        viewMoreBtn.className = 'image-item';
+        viewMoreBtn.innerHTML = `
+          <button onclick="
+            const container = this.closest('.image-container');
+            container.querySelector('.more-images').style.display = 'block';
+            this.style.display = 'none';
+          " style="
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+          ">
+            + ${remainingItems.length} more images
+          </button>
+        `;
+        
+        const moreImagesDiv = document.createElement('div');
+        moreImagesDiv.className = 'more-images';
+        moreImagesDiv.style.display = 'none';
+        
+        remainingItems.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'image-item';
+          div.innerHTML = createImageItem(item);
+          moreImagesDiv.appendChild(div);
+        });
+        
+        elements.rawImages.appendChild(viewMoreBtn);
+        elements.rawImages.appendChild(moreImagesDiv);
+        
+        elements.aiImages.appendChild(viewMoreBtn.cloneNode(true));
+        elements.aiImages.appendChild(moreImagesDiv.cloneNode(true));
+        
+        elements.manualImages.appendChild(viewMoreBtn.cloneNode(true));
+        elements.manualImages.appendChild(moreImagesDiv.cloneNode(true));
       }
+    }
+    
+    // Add single image item to all panels
+    function addImageItem(item) {
+      const imageItem = document.createElement('div');
+      imageItem.className = 'image-item';
+      imageItem.innerHTML = createImageItem(item);
+      
+      elements.rawImages.appendChild(imageItem.cloneNode(true));
+      elements.aiImages.appendChild(imageItem.cloneNode(true));
+      elements.manualImages.appendChild(imageItem.cloneNode(true));
+    }
+    
+    // Create HTML for an image item
+    function createImageItem(item) {
+      return `
+        ${item[CONFIG.fields.rawImage] ? `
+          <img src="${CONFIG.imageBaseUrl}${item[CONFIG.fields.rawImage]}" 
+               alt="Raw Image ${item[CONFIG.fields.imageId]}">
+        ` : '<div style="height: 150px; display: flex; align-items: center; justify-content: center;">No Image</div>'}
+        <p>ID: ${item[CONFIG.fields.imageId]}</p>
+      `;
     }
     
     // Refresh data
