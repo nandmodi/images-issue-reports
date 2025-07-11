@@ -141,7 +141,9 @@
   </style>
 </head>
 <body>
-  <div id="loader">Syncing data, please wait...</div>
+  <div id="loader">
+  <div id="loaderText">Syncing data, please wait... 0%</div>
+</div>
   <div id="toast">Auto-refreshed from Google Sheet</div>
   <h1>Image Review Dashboard</h1>
 
@@ -193,6 +195,13 @@ let cachedData = [];
 
 function fetchData() {
   document.getElementById("loader").style.display = "flex";
+  let percent = 0;
+  const loaderText = document.getElementById("loaderText");
+  const progressInterval = setInterval(() => {
+    percent += 5;
+    if (percent >= 95) percent = 95;
+    loaderText.innerText = `Syncing data, please wait... ${percent}%`;
+  }, 200);
   
 
   $.get(sheetUrl, function (csv) {
@@ -201,6 +210,11 @@ function fetchData() {
     cachedData = [...data];
     renderSummary();
     document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
+    clearInterval(progressInterval);
+    loaderText.innerText = 'Syncing data, please wait... 100%';
+    setTimeout(() => {
+      document.getElementById("loader").style.display = "none";
+    }, 300);
     showToast('Auto-refreshed from Google Sheet');
   });
 }
