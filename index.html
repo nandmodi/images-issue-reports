@@ -46,119 +46,110 @@
       font-weight: 500;
     }
     
-    /* Filter Section */
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 30px;
-      background: var(--white);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      justify-content: center;
-    }
-    
-    .filter-group {
-      flex: 1;
-      min-width: 250px;
-      max-width: 350px;
-    }
-    
-    .filter-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 500;
-      color: var(--dark-gray);
-    }
-    
-    .filter-group select, 
-    .filter-group input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--medium-gray);
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    
-    .filter-actions {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-    }
-    
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    
-    .btn-primary {
-      background-color: var(--primary-color);
-      color: var(--white);
-    }
-    
-    .btn-danger {
-      background-color: var(--danger-color);
-      color: var(--white);
-    }
-    
-    .btn:hover {
-      opacity: 0.9;
-      transform: translateY(-1px);
-    }
-    
-    /* Dashboard Grid */
-    .dashboard-grid {
+    /* Dashboard Sections */
+    .dashboard-sections {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      grid-template-columns: 1fr;
       gap: 20px;
-      margin-bottom: 30px;
     }
     
-    .card {
+    /* Percentage Cards Section */
+    .percentage-cards {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .percentage-card {
       background: var(--white);
       border-radius: 8px;
       box-shadow: var(--shadow);
       overflow: hidden;
     }
     
-    .card-header {
-      padding: 15px 20px;
+    .percentage-card-header {
+      padding: 12px 15px;
       background: var(--primary-color);
       color: var(--white);
       font-weight: 500;
       text-align: center;
+      font-size: 14px;
     }
     
-    .card-body {
-      padding: 15px 20px;
-      height: 300px;
+    .percentage-card-body {
+      padding: 15px;
+      height: 250px;
       overflow-y: auto;
     }
     
+    /* Image Section */
+    .image-section {
+      background: var(--white);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 15px;
+    }
+    
+    .image-section-header {
+      font-weight: 500;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    
+    .image-panels {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+    
+    .image-panel {
+      background: var(--light-gray);
+      border-radius: 6px;
+      padding: 10px;
+      text-align: center;
+    }
+    
+    .image-panel-header {
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: var(--dark-gray);
+    }
+    
+    .image-container {
+      height: 200px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--white);
+      border: 1px solid var(--medium-gray);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    /* Common Table Styles */
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 13px;
     }
     
     th, td {
-      padding: 10px;
+      padding: 8px;
       text-align: left;
       border-bottom: 1px solid var(--medium-gray);
     }
     
-    th {
-      font-weight: 500;
-      color: var(--dark-gray);
-    }
-    
     .bar-cell {
       position: relative;
-      height: 24px;
+      height: 20px;
     }
     
     .bar-cell span {
@@ -174,6 +165,7 @@
       position: relative;
       z-index: 1;
       padding-left: 5px;
+      font-size: 12px;
     }
     
     /* Loader and Toast */
@@ -233,13 +225,19 @@
       font-size: 14px;
     }
     
+    @media (max-width: 1200px) {
+      .percentage-cards {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
     @media (max-width: 768px) {
-      .filters {
-        flex-direction: column;
+      .percentage-cards {
+        grid-template-columns: 1fr;
       }
       
-      .filter-group {
-        min-width: 100%;
+      .image-panels {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -248,70 +246,69 @@
   <div class="container">
     <h1>Image Review Dashboard</h1>
     
-    <!-- Filters Section -->
-    <div class="filters">
-      <div class="filter-group">
-        <label for="filterDateRange">Date Range</label>
-        <input type="date" id="filterDateFrom" placeholder="From">
-        <input type="date" id="filterDateTo" placeholder="To" style="margin-top: 5px;">
-      </div>
-      
-      <div class="filter-group">
-        <label for="filterIssue">Issue</label>
-        <select id="filterIssue">
-          <option value="">All Issues</option>
-          <!-- Will be populated dynamically -->
-        </select>
-      </div>
-      
-      <div class="filter-group">
-        <label for="filterEnterprise">Enterprise</label>
-        <select id="filterEnterprise">
-          <option value="">All Enterprises</option>
-          <!-- Will be populated dynamically -->
-        </select>
-      </div>
-      
-      <div class="filter-actions">
-        <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-        <button class="btn btn-danger" onclick="refreshData()">Refresh Data</button>
-      </div>
-    </div>
-    
-    <!-- Dashboard Grid -->
-    <div class="dashboard-grid" id="dashboardGrid">
-      <div class="card">
-        <div class="card-header">Issue % Image Type</div>
-        <div class="card-body" id="imageTypeStats">
-          <!-- Will be populated dynamically -->
+    <div class="dashboard-sections">
+      <!-- Percentage Cards Section -->
+      <div class="percentage-cards">
+        <div class="percentage-card">
+          <div class="percentage-card-header">Issue % Image Type</div>
+          <div class="percentage-card-body" id="imageTypeStats">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+        
+        <div class="percentage-card">
+          <div class="percentage-card-header">Issue % Issue Wise</div>
+          <div class="percentage-card-body" id="issueStats">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+        
+        <div class="percentage-card">
+          <div class="percentage-card-header">Issue % AI Tag</div>
+          <div class="percentage-card-body" id="aiTagStats">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+        
+        <div class="percentage-card">
+          <div class="percentage-card-header">Issue % Enterprise</div>
+          <div class="percentage-card-body" id="enterpriseStats">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+        
+        <div class="percentage-card">
+          <div class="percentage-card-header">Issue % Sub Issue Wise</div>
+          <div class="percentage-card-body" id="subIssueStats">
+            <!-- Will be populated dynamically -->
+          </div>
         </div>
       </div>
       
-      <div class="card">
-        <div class="card-header">Issue % AI Tag</div>
-        <div class="card-body" id="aiTagStats">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">Issue % Issue Wise</div>
-        <div class="card-body" id="issueStats">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">Issue % Enterprise</div>
-        <div class="card-body" id="enterpriseStats">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">Issue % Sub Issue Wise</div>
-        <div class="card-body" id="subIssueStats">
-          <!-- Will be populated dynamically -->
+      <!-- Image Section -->
+      <div class="image-section">
+        <div class="image-section-header">Image Section</div>
+        <div class="image-panels">
+          <div class="image-panel">
+            <div class="image-panel-header">Raw</div>
+            <div class="image-container" id="rawImage">
+              <img src="" alt="Raw Image" style="display: none;">
+            </div>
+          </div>
+          
+          <div class="image-panel">
+            <div class="image-panel-header">AI</div>
+            <div class="image-container" id="aiImage">
+              <img src="" alt="AI Image" style="display: none;">
+            </div>
+          </div>
+          
+          <div class="image-panel">
+            <div class="image-panel-header">Manual</div>
+            <div class="image-container" id="manualImage">
+              <img src="" alt="Manual Image" style="display: none;">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -331,27 +328,30 @@
   <div id="toast"></div>
   
   <script>
-    // Configuration with field mappings
+    // Configuration
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
       refreshInterval: 300000, // 5 minutes in milliseconds
-      itemsToShow: 10, // Number of items to show initially
+      imageBaseUrl: "https://example.com/images/",
       
       // Field mappings
       fields: {
-        date: "createdDate",
         imageType: "image_category",
         issue: "mappedRejected_comment",
-        subIssue: "rejected_comment",
         aiTag: "ai_tag",
-        enterprise: "enterprise_name"
+        enterprise: "enterprise_name",
+        subIssue: "rejected_comment",
+        rawImage: "RAW_INPUT",
+        aiImage: "ai_output",
+        manualImage: "manual",
+        imageId: "image_id"
       },
       
       // Stats cards configuration
       statsCards: [
         { id: "imageTypeStats", field: "image_category", title: "Image Type" },
-        { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+        { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" },
         { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" }
       ]
@@ -360,6 +360,7 @@
     // Global variables
     let allData = [];
     let filteredData = [];
+    let currentImageIndex = 0;
     let refreshTimer = null;
     
     // DOM Elements
@@ -368,10 +369,9 @@
       loaderText: document.getElementById("loaderText"),
       toast: document.getElementById("toast"),
       lastUpdated: document.getElementById("lastUpdated"),
-      filterDateFrom: document.getElementById("filterDateFrom"),
-      filterDateTo: document.getElementById("filterDateTo"),
-      filterIssue: document.getElementById("filterIssue"),
-      filterEnterprise: document.getElementById("filterEnterprise")
+      rawImage: document.querySelector("#rawImage img"),
+      aiImage: document.querySelector("#aiImage img"),
+      manualImage: document.querySelector("#manualImage img")
     };
     
     // Initialize the dashboard
@@ -411,16 +411,9 @@
           return;
         }
         
-        // Format dates
-        allData.forEach(item => {
-          if (item[CONFIG.fields.date]) {
-            item.formattedDate = new Date(item[CONFIG.fields.date]);
-          }
-        });
-        
         filteredData = [...allData];
         renderDashboard();
-        populateFilters();
+        loadCurrentImage();
         updateLastUpdated();
         showToast("Data loaded successfully");
       } catch (error) {
@@ -433,7 +426,6 @@
     
     // Render the dashboard
     function renderDashboard(data = filteredData) {
-      // Render stats cards
       CONFIG.statsCards.forEach(card => {
         const container = document.getElementById(card.id);
         const summary = summarizeData(data, card.field);
@@ -441,14 +433,12 @@
       });
     }
     
-    // Create stats table with limited rows
+    // Create stats table
     function createStatsTable(summaryData, totalCount) {
       const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
       
       let html = '<table>';
-      
-      // Show first 10 items
-      items.slice(0, CONFIG.itemsToShow).forEach(([key, count]) => {
+      items.forEach(([key, count]) => {
         const percentage = ((count / totalCount) * 100).toFixed(1);
         html += `
           <tr>
@@ -461,36 +451,6 @@
           </tr>
         `;
       });
-      
-      // Show "View More" if there are more items
-      if (items.length > CONFIG.itemsToShow) {
-        html += `
-          <tr>
-            <td colspan="3" style="text-align: center; color: var(--primary-color); cursor: pointer;"
-                onclick="this.parentNode.querySelector('.hidden-items').style.display='table-row-group'; this.style.display='none'">
-              + ${items.length - CONFIG.itemsToShow} more items
-            </td>
-          </tr>
-          <tbody class="hidden-items" style="display: none;">
-        `;
-        
-        items.slice(CONFIG.itemsToShow).forEach(([key, count]) => {
-          const percentage = ((count / totalCount) * 100).toFixed(1);
-          html += `
-            <tr>
-              <td>${key || 'Unknown'}</td>
-              <td>${count}</td>
-              <td class="bar-cell">
-                <span style="width: ${percentage}%"></span>
-                <div>${percentage}%</div>
-              </td>
-            </tr>
-          `;
-        });
-        
-        html += '</tbody>';
-      }
-      
       html += '</table>';
       return html;
     }
@@ -507,71 +467,33 @@
       return summary;
     }
     
-    // Populate filters
-    function populateFilters() {
-      // Populate Issue filter
-      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
-      issueValues.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        elements.filterIssue.appendChild(option);
-      });
+    // Load current image
+    function loadCurrentImage() {
+      if (filteredData.length === 0) return;
       
-      // Populate Enterprise filter
-      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
-      enterpriseValues.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        elements.filterEnterprise.appendChild(option);
-      });
+      const currentItem = filteredData[currentImageIndex];
       
-      // Set default date range (last 30 days)
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
+      // Update image displays
+      if (currentItem[CONFIG.fields.rawImage]) {
+        elements.rawImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.rawImage];
+        elements.rawImage.style.display = 'block';
+      } else {
+        elements.rawImage.style.display = 'none';
+      }
       
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
-    }
-    
-    // Apply filters
-    function applyFilters() {
-      showLoader("Applying filters...");
+      if (currentItem[CONFIG.fields.aiImage]) {
+        elements.aiImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.aiImage];
+        elements.aiImage.style.display = 'block';
+      } else {
+        elements.aiImage.style.display = 'none';
+      }
       
-      const dateFrom = elements.filterDateFrom.valueAsDate;
-      const dateTo = elements.filterDateTo.valueAsDate;
-      const issueFilter = elements.filterIssue.value;
-      const enterpriseFilter = elements.filterEnterprise.value;
-      
-      filteredData = allData.filter(row => {
-        // Date filter
-        if (dateFrom && row.formattedDate) {
-          if (row.formattedDate < dateFrom) return false;
-        }
-        if (dateTo && row.formattedDate) {
-          const endOfDay = new Date(dateTo);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (row.formattedDate > endOfDay) return false;
-        }
-        
-        // Issue filter
-        if (issueFilter && row[CONFIG.fields.issue] !== issueFilter) {
-          return false;
-        }
-        
-        // Enterprise filter
-        if (enterpriseFilter && row[CONFIG.fields.enterprise] !== enterpriseFilter) {
-          return false;
-        }
-        
-        return true;
-      });
-      
-      renderDashboard();
-      hideLoader();
-      showToast(`Showing ${filteredData.length} records`);
+      if (currentItem[CONFIG.fields.manualImage]) {
+        elements.manualImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.manualImage];
+        elements.manualImage.style.display = 'block';
+      } else {
+        elements.manualImage.style.display = 'none';
+      }
     }
     
     // Refresh data
