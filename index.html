@@ -207,6 +207,7 @@ function fetchData() {
   $.get(sheetUrl, function (csv) {
     const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
     data = parsed.data;
+    populateFilters();
     const totalRows = data.length;
     let loaded = 0;
     const chunkSize = Math.ceil(totalRows / 20);
@@ -335,8 +336,4 @@ window.onload = () => {
   
 
   fetchData();
-  setTimeout(populateFilters, 300); // delay to ensure data is fetched
-};
-  </script>
-</body>
-</html>
+  
