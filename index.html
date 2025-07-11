@@ -245,6 +245,7 @@ function fetchData() {
 }
 
     function applyFilters() {
+  document.getElementById("loader").style.display = "flex";
   const dateVal = document.getElementById("filterDate").value.toLowerCase();
   const issueVal = document.getElementById("filterIssue").value;
   const entVal = document.getElementById("filterEnterprise").value;
@@ -262,15 +263,14 @@ function fetchData() {
     createSummaryBlock("Rejected Comment (Detailed)", summarizeByField("rejected_comment", filtered)) +
     createSummaryBlock("AI Tag", summarizeByField("ai_tag", filtered)) +
     createSummaryBlock("Enterprise", summarizeByField("enterprise_name", filtered));
-}
-
-    
+  document.getElementById("loader").style.display = "none";
 }
 
 function refreshCache() {
+  document.getElementById("loader").style.display = "flex";
   localStorage.removeItem('cachedImageReviewData');
   localStorage.removeItem('imageReviewDataTimestamp');
-  location.reload();
+  setTimeout(() => location.reload(), 800);
 }
 
 function populateFilters() {
