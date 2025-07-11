@@ -182,7 +182,7 @@
   <script>
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
     let data = [];
-let cachedData = JSON.parse(sessionStorage.getItem('cachedImageReviewData')) || [];
+let cachedData = [];
 
     function showToast(message) {
   const toast = document.getElementById("toast");
@@ -193,21 +193,12 @@ let cachedData = JSON.parse(sessionStorage.getItem('cachedImageReviewData')) || 
 
 function fetchData() {
   document.getElementById("loader").style.display = "flex";
-  const lastUpdated = sessionStorage.getItem('imageReviewDataTimestamp');
-  if (cachedData.length > 0 && lastUpdated) {
-    data = cachedData;
-    renderSummary();
-    document.getElementById("loader").style.display = "none";
-    document.getElementById('lastUpdated').innerText = `Last updated: ${new Date(parseInt(lastUpdated)).toLocaleString()}`;
-    return;
-  }
+  
 
   $.get(sheetUrl, function (csv) {
     const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
     data = parsed.data;
     cachedData = [...data];
-    sessionStorage.setItem('cachedImageReviewData', JSON.stringify(cachedData));
-    sessionStorage.setItem('imageReviewDataTimestamp', Date.now());
     renderSummary();
     document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
     showToast('Auto-refreshed from Google Sheet');
@@ -268,8 +259,7 @@ function fetchData() {
 
 function refreshCache() {
   document.getElementById("loader").style.display = "flex";
-  sessionStorage.removeItem('cachedImageReviewData');
-  sessionStorage.removeItem('imageReviewDataTimestamp');
+  
   setTimeout(() => location.reload(), 800);
 }
 
@@ -309,14 +299,7 @@ function populateFilters() {
 }
 
 window.onload = () => {
-  const maxAge = 1000 * 60 * 60 * 6; // 6 hours in milliseconds
-  const lastUpdated = parseInt(sessionStorage.getItem('imageReviewDataTimestamp')) || 0;
-  const now = Date.now();
-
-  if (now - lastUpdated > maxAge) {
-    localStorage.removeItem('cachedImageReviewData');
-    localStorage.removeItem('imageReviewDataTimestamp');
-  }
+  
 
   fetchData();
   setTimeout(populateFilters, 300); // delay to ensure data is fetched
