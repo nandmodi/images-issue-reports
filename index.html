@@ -48,43 +48,73 @@
     
     /* Filter Section */
     .filters {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: flex;
+      flex-wrap: wrap;
       gap: 15px;
       margin-bottom: 30px;
       background: var(--white);
       padding: 20px;
       border-radius: 8px;
       box-shadow: var(--shadow);
+      justify-content: center;
     }
     
-    .filter-card {
-      background: var(--white);
-      padding: 15px;
-      border-radius: 6px;
-      box-shadow: var(--shadow);
+    .filter-group {
+      flex: 1;
+      min-width: 250px;
+      max-width: 350px;
     }
     
-    .filter-card h3 {
-      margin-bottom: 15px;
-      color: var(--primary-color);
-      font-size: 16px;
-      text-align: center;
+    .filter-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--dark-gray);
     }
     
-    .filter-content {
+    .filter-group select, 
+    .filter-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--medium-gray);
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .filter-actions {
       display: flex;
-      flex-direction: column;
+      align-items: flex-end;
       gap: 10px;
-      max-height: 200px;
-      overflow-y: auto;
-      padding-right: 5px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: var(--white);
+    }
+    
+    .btn-danger {
+      background-color: var(--danger-color);
+      color: var(--white);
+    }
+    
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
     }
     
     /* Dashboard Grid */
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
       margin-bottom: 30px;
     }
@@ -146,57 +176,6 @@
       padding-left: 5px;
     }
     
-    /* Image Section */
-    .image-section {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      margin-top: 30px;
-    }
-    
-    .image-panel {
-      background: var(--white);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-    
-    .image-panel-header {
-      padding: 15px 20px;
-      background: var(--primary-color);
-      color: var(--white);
-      font-weight: 500;
-      text-align: center;
-    }
-    
-    .image-container {
-      height: 300px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: var(--light-gray);
-      padding: 20px;
-      overflow-y: auto;
-    }
-    
-    .image-item {
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    
-    .image-item img {
-      max-width: 100%;
-      max-height: 150px;
-      object-fit: contain;
-      margin-bottom: 5px;
-      border: 1px solid var(--medium-gray);
-    }
-    
-    .image-item p {
-      font-size: 12px;
-      color: var(--dark-gray);
-    }
-    
     /* Loader and Toast */
     #loader {
       position: fixed;
@@ -254,15 +233,13 @@
       font-size: 14px;
     }
     
-    @media (max-width: 1024px) {
-      .filters, .dashboard-grid, .image-section {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-    
     @media (max-width: 768px) {
-      .filters, .dashboard-grid, .image-section {
-        grid-template-columns: 1fr;
+      .filters {
+        flex-direction: column;
+      }
+      
+      .filter-group {
+        min-width: 100%;
       }
     }
   </style>
@@ -273,47 +250,31 @@
     
     <!-- Filters Section -->
     <div class="filters">
-      <div class="filter-card">
-        <h3>Issue % Image Type</h3>
-        <div class="filter-content" id="filterImageType">
-          <!-- Will be populated dynamically -->
-        </div>
+      <div class="filter-group">
+        <label for="filterDateRange">Date Range</label>
+        <input type="date" id="filterDateFrom" placeholder="From">
+        <input type="date" id="filterDateTo" placeholder="To" style="margin-top: 5px;">
       </div>
       
-      <div class="filter-card">
-        <h3>Issue % Issue Wise</h3>
-        <div class="filter-content" id="filterIssue">
+      <div class="filter-group">
+        <label for="filterIssue">Issue</label>
+        <select id="filterIssue">
+          <option value="">All Issues</option>
           <!-- Will be populated dynamically -->
-        </div>
+        </select>
       </div>
       
-      <div class="filter-card">
-        <h3>Issue % Sub Issue Wise</h3>
-        <div class="filter-content" id="filterSubIssue">
+      <div class="filter-group">
+        <label for="filterEnterprise">Enterprise</label>
+        <select id="filterEnterprise">
+          <option value="">All Enterprises</option>
           <!-- Will be populated dynamically -->
-        </div>
+        </select>
       </div>
       
-      <div class="filter-card">
-        <h3>Issue % AI Tag</h3>
-        <div class="filter-content" id="filterAITag">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="filter-card">
-        <h3>Issue % Enterprise</h3>
-        <div class="filter-content" id="filterEnterprise">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="filter-card">
-        <h3>Actions</h3>
-        <div class="filter-content">
-          <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
-          <button class="btn btn-danger" onclick="refreshData()">Refresh Data</button>
-        </div>
+      <div class="filter-actions">
+        <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn btn-danger" onclick="refreshData()">Refresh Data</button>
       </div>
     </div>
     
@@ -327,22 +288,15 @@
       </div>
       
       <div class="card">
-        <div class="card-header">Issue % Issue Wise</div>
-        <div class="card-body" id="issueStats">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="card">
-        <div class="card-header">Issue % Sub Issue Wise</div>
-        <div class="card-body" id="subIssueStats">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="card">
         <div class="card-header">Issue % AI Tag</div>
         <div class="card-body" id="aiTagStats">
+          <!-- Will be populated dynamically -->
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Issue % Issue Wise</div>
+        <div class="card-body" id="issueStats">
           <!-- Will be populated dynamically -->
         </div>
       </div>
@@ -353,27 +307,10 @@
           <!-- Will be populated dynamically -->
         </div>
       </div>
-    </div>
-    
-    <!-- Image Section -->
-    <div class="image-section">
-      <div class="image-panel">
-        <div class="image-panel-header">Raw</div>
-        <div class="image-container" id="rawImages">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
       
-      <div class="image-panel">
-        <div class="image-panel-header">AI</div>
-        <div class="image-container" id="aiImages">
-          <!-- Will be populated dynamically -->
-        </div>
-      </div>
-      
-      <div class="image-panel">
-        <div class="image-panel-header">Manual</div>
-        <div class="image-container" id="manualImages">
+      <div class="card">
+        <div class="card-header">Issue % Sub Issue Wise</div>
+        <div class="card-body" id="subIssueStats">
           <!-- Will be populated dynamically -->
         </div>
       </div>
@@ -398,38 +335,25 @@
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
       refreshInterval: 300000, // 5 minutes in milliseconds
-      imageBaseUrl: "https://example.com/images/", // Base URL for images
       itemsToShow: 10, // Number of items to show initially
       
       // Field mappings
       fields: {
+        date: "createdDate",
         imageType: "image_category",
         issue: "mappedRejected_comment",
         subIssue: "rejected_comment",
         aiTag: "ai_tag",
-        enterprise: "enterprise_name",
-        rawImage: "RAW_INPUT",
-        aiImage: "ai_output",
-        manualImage: "manual",
-        imageId: "image_id"
+        enterprise: "enterprise_name"
       },
-      
-      // Filter configuration
-      filters: [
-        { id: "filterImageType", field: "image_category", title: "Image Type" },
-        { id: "filterIssue", field: "mappedRejected_comment", title: "Issue" },
-        { id: "filterSubIssue", field: "rejected_comment", title: "Sub Issue" },
-        { id: "filterAITag", field: "ai_tag", title: "AI Tag" },
-        { id: "filterEnterprise", field: "enterprise_name", title: "Enterprise" }
-      ],
       
       // Stats cards configuration
       statsCards: [
         { id: "imageTypeStats", field: "image_category", title: "Image Type" },
-        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
-        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
-        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
+        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" },
+        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" }
       ]
     };
     
@@ -444,9 +368,10 @@
       loaderText: document.getElementById("loaderText"),
       toast: document.getElementById("toast"),
       lastUpdated: document.getElementById("lastUpdated"),
-      rawImages: document.getElementById("rawImages"),
-      aiImages: document.getElementById("aiImages"),
-      manualImages: document.getElementById("manualImages")
+      filterDateFrom: document.getElementById("filterDateFrom"),
+      filterDateTo: document.getElementById("filterDateTo"),
+      filterIssue: document.getElementById("filterIssue"),
+      filterEnterprise: document.getElementById("filterEnterprise")
     };
     
     // Initialize the dashboard
@@ -486,14 +411,18 @@
           return;
         }
         
+        // Format dates
+        allData.forEach(item => {
+          if (item[CONFIG.fields.date]) {
+            item.formattedDate = new Date(item[CONFIG.fields.date]);
+          }
+        });
+        
         filteredData = [...allData];
         renderDashboard();
         populateFilters();
         updateLastUpdated();
         showToast("Data loaded successfully");
-        
-        // Load images
-        loadImages();
       } catch (error) {
         console.error("Error fetching data:", error);
         showToast("Error loading data", true);
@@ -580,128 +509,69 @@
     
     // Populate filters
     function populateFilters() {
-      CONFIG.filters.forEach(filter => {
-        const container = document.getElementById(filter.id);
-        container.innerHTML = '';
-        
-        const uniqueValues = [...new Set(allData.map(item => item[filter.field] || 'Unknown'))].sort();
-        
-        uniqueValues.forEach(value => {
-          const div = document.createElement('div');
-          div.className = 'filter-item';
-          div.innerHTML = `
-            <input type="checkbox" id="${filter.id}_${value.replace(/\s+/g, '_')}" 
-                   value="${value}" checked>
-            <label for="${filter.id}_${value.replace(/\s+/g, '_')}">${value}</label>
-          `;
-          container.appendChild(div);
-        });
+      // Populate Issue filter
+      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
+      issueValues.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        elements.filterIssue.appendChild(option);
       });
+      
+      // Populate Enterprise filter
+      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
+      enterpriseValues.forEach(value => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        elements.filterEnterprise.appendChild(option);
+      });
+      
+      // Set default date range (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
     }
     
     // Apply filters
     function applyFilters() {
       showLoader("Applying filters...");
       
-      const filters = {};
-      CONFIG.filters.forEach(filter => {
-        const container = document.getElementById(filter.id);
-        const checkedValues = Array.from(container.querySelectorAll('input:checked')).map(el => el.value);
-        filters[filter.field] = checkedValues;
-      });
+      const dateFrom = elements.filterDateFrom.valueAsDate;
+      const dateTo = elements.filterDateTo.valueAsDate;
+      const issueFilter = elements.filterIssue.value;
+      const enterpriseFilter = elements.filterEnterprise.value;
       
       filteredData = allData.filter(row => {
-        return Object.entries(filters).every(([field, allowedValues]) => {
-          if (allowedValues.length === 0) return true;
-          const value = row[field] || 'Unknown';
-          return allowedValues.includes(value);
-        });
+        // Date filter
+        if (dateFrom && row.formattedDate) {
+          if (row.formattedDate < dateFrom) return false;
+        }
+        if (dateTo && row.formattedDate) {
+          const endOfDay = new Date(dateTo);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (row.formattedDate > endOfDay) return false;
+        }
+        
+        // Issue filter
+        if (issueFilter && row[CONFIG.fields.issue] !== issueFilter) {
+          return false;
+        }
+        
+        // Enterprise filter
+        if (enterpriseFilter && row[CONFIG.fields.enterprise] !== enterpriseFilter) {
+          return false;
+        }
+        
+        return true;
       });
       
       renderDashboard();
-      loadImages();
       hideLoader();
       showToast(`Showing ${filteredData.length} records`);
-    }
-    
-    // Load images with limited initial display
-    function loadImages() {
-      elements.rawImages.innerHTML = '';
-      elements.aiImages.innerHTML = '';
-      elements.manualImages.innerHTML = '';
-      
-      // Show first 10 images with "View More" option
-      const itemsToShow = filteredData.slice(0, CONFIG.itemsToShow);
-      const remainingItems = filteredData.slice(CONFIG.itemsToShow);
-      
-      // Display initial images
-      itemsToShow.forEach(item => {
-        addImageItem(item);
-      });
-      
-      // Add "View More" button if there are more items
-      if (remainingItems.length > 0) {
-        const viewMoreBtn = document.createElement('div');
-        viewMoreBtn.className = 'image-item';
-        viewMoreBtn.innerHTML = `
-          <button onclick="
-            const container = this.closest('.image-container');
-            container.querySelector('.more-images').style.display = 'block';
-            this.style.display = 'none';
-          " style="
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-          ">
-            + ${remainingItems.length} more images
-          </button>
-        `;
-        
-        const moreImagesDiv = document.createElement('div');
-        moreImagesDiv.className = 'more-images';
-        moreImagesDiv.style.display = 'none';
-        
-        remainingItems.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'image-item';
-          div.innerHTML = createImageItem(item);
-          moreImagesDiv.appendChild(div);
-        });
-        
-        elements.rawImages.appendChild(viewMoreBtn);
-        elements.rawImages.appendChild(moreImagesDiv);
-        
-        elements.aiImages.appendChild(viewMoreBtn.cloneNode(true));
-        elements.aiImages.appendChild(moreImagesDiv.cloneNode(true));
-        
-        elements.manualImages.appendChild(viewMoreBtn.cloneNode(true));
-        elements.manualImages.appendChild(moreImagesDiv.cloneNode(true));
-      }
-    }
-    
-    // Add single image item to all panels
-    function addImageItem(item) {
-      const imageItem = document.createElement('div');
-      imageItem.className = 'image-item';
-      imageItem.innerHTML = createImageItem(item);
-      
-      elements.rawImages.appendChild(imageItem.cloneNode(true));
-      elements.aiImages.appendChild(imageItem.cloneNode(true));
-      elements.manualImages.appendChild(imageItem.cloneNode(true));
-    }
-    
-    // Create HTML for an image item
-    function createImageItem(item) {
-      return `
-        ${item[CONFIG.fields.rawImage] ? `
-          <img src="${CONFIG.imageBaseUrl}${item[CONFIG.fields.rawImage]}" 
-               alt="Raw Image ${item[CONFIG.fields.imageId]}">
-        ` : '<div style="height: 150px; display: flex; align-items: center; justify-content: center;">No Image</div>'}
-        <p>ID: ${item[CONFIG.fields.imageId]}</p>
-      `;
     }
     
     // Refresh data
