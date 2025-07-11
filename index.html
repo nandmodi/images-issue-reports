@@ -11,8 +11,9 @@
       background-color: #f9f9f9;
     }
 
-    h1, h2 {
+    h1 {
       text-align: center;
+      margin-bottom: 30px;
     }
 
     .filters {
@@ -20,7 +21,7 @@
       flex-wrap: wrap;
       justify-content: center;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .filters select, .filters input[type="text"] {
@@ -37,54 +38,63 @@
       cursor: pointer;
     }
 
+    .grid-layout {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .summary-block {
+      background-color: #fff;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+
+    .summary-block h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
 
     th, td {
-      padding: 12px;
-      text-align: left;
+      padding: 8px;
       border-bottom: 1px solid #ddd;
     }
 
     th {
       background-color: #f2f2f2;
+      text-align: left;
     }
 
-    .image-link img {
-      height: 150px;
-      width: auto;
-      border-radius: 4px;
+    .bar-cell {
+      position: relative;
+      height: 24px;
     }
 
-    #loadMore {
-      text-align: center;
-      padding: 10px;
-      cursor: pointer;
-      background-color: #1a73e8;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      margin-top: 10px;
+    .bar-cell span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background-color: #d1e3ff;
+      z-index: 0;
     }
 
-    .block {
-      margin-top: 30px;
-    }
-
-    #summaryTable tbody tr:hover {
-      background-color: #f1f1f1;
+    .bar-cell div {
+      position: relative;
+      z-index: 1;
+      padding-left: 5px;
     }
   </style>
 </head>
 <body>
   <h1>Image Review Dashboard</h1>
 
-  <!-- Filters Section -->
   <div class="filters">
     <input type="text" id="filterDate" placeholder="Filter by Date">
     <select id="filterType">
@@ -107,109 +117,136 @@
     <button onclick="applyFilters()">Apply Filters</button>
   </div>
 
-  <!-- Summary Table -->
-  <div class="block" id="summaryBlock">
-    <h2>Issue Wise Summary</h2>
-    <table id="summaryTable">
-      <thead>
-        <tr>
-          <th>Issue</th>
-          <th>Count</th>
-          <th>Percentage</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="grid-layout" id="summaryGrid">
+    <!-- Summary sections will be inserted here -->
+    <!--
+      Section 1: Category-wise Issue Count
+      Section 2: Rejected Comment (Grouped + Detailed)
+      Section 3: AI Tag Distribution
+      Section 4: Enterprise-wise Issue Count
+    -->
   </div>
-
-  <!-- Image Viewer -->
-  <div class="block" id="viewImageBlock">
-    <h2>Image Comparison</h2>
-    <table id="imageTable">
-      <thead>
-        <tr>
-          <th>Input</th>
-          <th>AI</th>
-          <th>Manual</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <button id="loadMore">Load More Images</button>
+  <div style="text-align:center; margin-top: 20px;">
+    <button onclick="downloadData()" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Download All Data</button>
   </div>
-
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <div style="text-align:center; margin-top: 10px;">
+    <button onclick="refreshCache()" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Refresh Data</button>
+    <p id="lastUpdated" style="margin-top: 5px; font-size: 0.9em; color: gray;"></p>
+  </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <script>
     const sheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv";
     let data = [];
-    let startIndex = 0;
-    const batchSize = 10;
+let cachedData = JSON.parse(localStorage.getItem('cachedImageReviewData')) || [];
 
     function fetchData() {
-      $.get(sheetUrl, function (csv) {
-        const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+  const lastUpdated = localStorage.getItem('imageReviewDataTimestamp');
+  if (cachedData.length > 0 && lastUpdated) {
+    data = cachedData;
+    renderSummary();
+    document.getElementById('lastUpdated').innerText = `Last updated: ${new Date(parseInt(lastUpdated)).toLocaleString()}`;
+    return;
+  }
+  $.get(sheetUrl, function (csv) {
+    const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+    data = parsed.data;
+    cachedData = [...data];
+    localStorage.setItem('cachedImageReviewData', JSON.stringify(cachedData));
+    localStorage.setItem('imageReviewDataTimestamp', Date.now());
+    renderSummary();
+    document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleString()}`;
+  });
+}
+  $.get(sheetUrl, function (csv) {
+    const parsed = Papa.parse(csv, { header: true, skipEmptyLines: true });
+    data = parsed.data;
+    cachedData = [...data];
+    localStorage.setItem('cachedImageReviewData', JSON.stringify(cachedData));
+    renderSummary();
+  });
+});
         data = parsed.data;
-        displaySummary();
-        displayImageData();
+        renderSummary();
       });
     }
 
-    function displaySummary() {
-      const summary = {};
+    function createSummaryBlock(title, summaryMap) {
+      let html = `<div class='summary-block'><h2>${title}</h2><table>`;
+      Object.entries(summaryMap).forEach(([key, count]) => {
+        const pct = ((count / data.length) * 100).toFixed(2);
+        html += `<tr><td>${key}</td><td>${count}</td><td class='bar-cell'><span style='width:${pct}%'>&nbsp;</span><div>${pct}%</div></td></tr>`;
+      });
+      html += `</table></div>`;
+      return html;
+    }
+
+    function summarizeByField(fieldName, sourceData = data) {
+  const summary = {};
+  sourceData.forEach(row => {
+    const key = row[fieldName] || "Other";
+    summary[key] = (summary[key] || 0) + 1;
+  });
+  return summary;
+};
       data.forEach(row => {
-        const key = row.rejected_comment || "Other";
+        const key = row[fieldName] || "Other";
         summary[key] = (summary[key] || 0) + 1;
       });
-
-      const tbody = document.querySelector("#summaryTable tbody");
-      tbody.innerHTML = "";
-      Object.entries(summary).forEach(([issue, count]) => {
-        const percentage = ((count / data.length) * 100).toFixed(2);
-        tbody.innerHTML += `<tr><td>${issue}</td><td>${count}</td><td>${percentage}%</td></tr>`;
-      });
+      return summary;
     }
 
-    function displayImageData() {
-      const dateVal = document.getElementById("filterDate").value;
-      const typeVal = document.getElementById("filterType").value;
-      const issueVal = document.getElementById("filterIssue").value;
-      const entVal = document.getElementById("filterEnterprise").value;
-
-      const filtered = data.filter(row => {
-        return (!dateVal || row.createdDate.includes(dateVal)) &&
-               (!typeVal || row.image_category === typeVal) &&
-               (!issueVal || row.rejected_comment === issueVal) &&
-               (!entVal || row.enterprise_name === entVal);
-      });
-
-      const tbody = document.querySelector("#imageTable tbody");
-      if (startIndex === 0) tbody.innerHTML = "";
-
-      const batch = filtered.slice(startIndex, startIndex + batchSize);
-      batch.forEach(row => {
-        tbody.innerHTML += `
-          <tr>
-            <td><a href="${row.RAW_INPUT}" target="_blank" class="image-link"><img src="${row.RAW_INPUT}" /></a></td>
-            <td><a href="${row.ai_output}" target="_blank" class="image-link"><img src="${row.ai_output}" /></a></td>
-            <td><a href="${row.manual}" target="_blank" class="image-link"><img src="${row.manual}" /></a></td>
-          </tr>`;
-      });
-
-      document.getElementById("loadMore").style.display = (startIndex + batchSize >= filtered.length) ? "none" : "block";
-    }
+    function renderSummary() {
+  const grid = document.getElementById("summaryGrid");
+  grid.innerHTML =
+    createSummaryBlock("Category", summarizeByField("image_category")) +
+    createSummaryBlock("Rejected Comment (Grouped)", summarizeByField("rejected_comment_group")) +
+    createSummaryBlock("Rejected Comment (Detailed)", summarizeByField("rejected_comment")) +
+    createSummaryBlock("AI Tag", summarizeByField("ai_tag")) +
+    createSummaryBlock("Enterprise", summarizeByField("enterprise_name"));
+}
 
     function applyFilters() {
-      startIndex = 0;
-      displayImageData();
-    }
+  const dateVal = document.getElementById("filterDate").value.toLowerCase();
+  const typeVal = document.getElementById("filterType").value;
+  const issueVal = document.getElementById("filterIssue").value;
+  const entVal = document.getElementById("filterEnterprise").value;
 
-    document.getElementById("loadMore").addEventListener("click", function() {
-      startIndex += batchSize;
-      displayImageData();
-    });
+  const filtered = data.filter(row => {
+    return (!dateVal || (row.createdDate || '').toLowerCase().includes(dateVal)) &&
+           (!typeVal || row.image_category === typeVal) &&
+           (!issueVal || row.rejected_comment === issueVal) &&
+           (!entVal || row.enterprise_name === entVal);
+  });
 
-    window.onload = fetchData;
+  const grid = document.getElementById("summaryGrid");
+  grid.innerHTML =
+    createSummaryBlock("Category", summarizeByField("image_category", filtered)) +
+    createSummaryBlock("Rejected Comment (Grouped)", summarizeByField("rejected_comment_group", filtered)) +
+    createSummaryBlock("Rejected Comment (Detailed)", summarizeByField("rejected_comment", filtered)) +
+    createSummaryBlock("AI Tag", summarizeByField("ai_tag", filtered)) +
+    createSummaryBlock("Enterprise", summarizeByField("enterprise_name", filtered));
+}
+
+    function downloadData() {
+  if (!data.length) return alert('No data to download');
+  const csv = Papa.unparse(data);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'image_review_data.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function refreshCache() {
+  localStorage.removeItem('cachedImageReviewData');
+  localStorage.removeItem('imageReviewDataTimestamp');
+  location.reload();
+}
+
+window.onload = fetchData;
   </script>
 </body>
 </html>
