@@ -570,33 +570,7 @@ function populateFilters() {
   });
 }
 
-function loadCurrentImage() {
-  const panel = document.querySelector(".image-panels");
-  panel.innerHTML = "";
-  if (!filteredData.length) return;
-  for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
-    const item = filteredData[i];
-    const raw = item[CONFIG.fields.rawImage] || "";
-    const ai = item[CONFIG.fields.aiImage] || "";
-    const manual = item[CONFIG.fields.manualImage] || "";
-
-    [
-      { label: "Raw", src: raw },
-      { label: "AI", src: ai },
-      { label: "Manual", src: manual }
-    ].forEach(({ label, src }) => {
-      const imgPanel = document.createElement("div");
-      imgPanel.className = "image-panel";
-      imgPanel.innerHTML = `
-        <div class="image-panel-header">${label}</div>
-        <div class="image-container">
-          <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
-        </div>
-      `;
-      panel.appendChild(imgPanel);
-    });
-  }
-} 
+$1 
 }
 
 function applyFilters() {
