@@ -562,9 +562,6 @@ function createStatsTable(summaryData, totalCount) {
   html += `</tbody></table>`;
   return html;
 }
-  return html;
-}
-}
 
 function populateFilters() {
   const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
