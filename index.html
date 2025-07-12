@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image Review Dashboard</title>
-  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="icon" href="https://spyne-prod-ai.s3.us-east-1.amazonaws.com/ai-dataset/2025/logo/unnamed.png" type="image/x-icon"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet"/>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
@@ -28,20 +28,14 @@
 
     body {
       font-family: 'Roboto', sans-serif;
-      line-height: 1.6;
-      color: #333;
       background-color: var(--light-gray);
       padding: 10px;
-      width: 100vw;
       overflow-x: hidden;
     }
 
     .container {
       width: 100%;
-      max-width: 100%;
       margin: 0 auto;
-      padding: 0 10px;
-      box-sizing: border-box;
     }
 
     h1 {
@@ -93,7 +87,6 @@
       border-radius: 4px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
     }
 
     .btn-primary {
@@ -222,9 +215,14 @@
     }
 
     .image-panels {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: block;
+      padding-bottom: 10px;
+    }
+
+    .image-row {
+      display: flex;
       gap: 15px;
+      margin-bottom: 15px;
     }
 
     .image-panel {
@@ -232,6 +230,7 @@
       border-radius: 6px;
       padding: 15px;
       text-align: center;
+      flex: 1;
     }
 
     .image-panel-header {
@@ -283,7 +282,9 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     #toast {
@@ -315,18 +316,8 @@
 
     @media (max-width: 768px) {
       .filter-section,
-      .percentage-section,
-      .image-panels {
+      .percentage-section {
         grid-template-columns: 1fr;
-      }
-
-      .percentage-column {
-        flex-direction: column;
-      }
-
-      .percentage-card,
-      .percentage-card.full-height {
-        min-height: 160px;
       }
 
       .percentage-card-body tbody {
@@ -334,7 +325,6 @@
       }
     }
 
-    /* ✅ Added scroll only for Sub Issue card */
     .percentage-card-body#subIssueStats {
       overflow-x: auto;
     }
@@ -346,10 +336,9 @@
   </style>
 </head>
 <body>
-  <!-- Body Section Start -->
   <div class="container">
     <h1>Image Review Dashboard</h1>
-    <!-- Filter Section -->
+
     <div class="filter-section">
       <div class="filter-group">
         <label for="filterDateFrom">Date Range (From)</label>
@@ -361,15 +350,11 @@
       </div>
       <div class="filter-group">
         <label for="filterIssue">Issue</label>
-        <select id="filterIssue">
-          <option value="">All Issues</option>
-        </select>
+        <select id="filterIssue"><option value="">All Issues</option></select>
       </div>
       <div class="filter-group">
         <label for="filterEnterprise">Enterprise</label>
-        <select id="filterEnterprise">
-          <option value="">All Enterprises</option>
-        </select>
+        <select id="filterEnterprise"><option value="">All Enterprises</option></select>
       </div>
       <div class="filter-actions">
         <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
@@ -377,7 +362,6 @@
       </div>
     </div>
 
-    <!-- Percentage Cards Section -->
     <div class="percentage-section">
       <div class="percentage-column">
         <div class="percentage-card">
@@ -407,252 +391,192 @@
       </div>
     </div>
 
-    <!-- Image Section -->
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
-      <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;" id="imagePanels"></div>
+      <div class="image-panels" id="imagePanels"></div>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
       <p id="lastUpdated">Last updated: Never</p>
     </div>
   </div>
 
-  <!-- Loader -->
-  <div id="loader">
-    <div class="spinner"></div>
-    <div id="loaderText">Loading data...</div>
-  </div>
-
-  <!-- Toast Notification -->
+  <div id="loader"><div class="spinner"></div><div id="loaderText">Loading data...</div></div>
   <div id="toast"></div>
 
-  <!-- JavaScript Setup Start -->
   <script>
     const CONFIG = {
-  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-  refreshInterval: 300000,
-    fields: {
-    date: "createdDate",
-    imageType: "image_category",
-    issue: "mappedRejected_comment",
-    subIssue: "rejected_comment",
-    aiTag: "ai_tag",
-    enterprise: "enterprise_name",
-    rawImage: "RAW_INPUT",
-    aiImage: "ai_output",
-    manualImage: "manual",
-    imageId: "image_id"
-  },
-  statsCards: [
-    { id: "imageTypeStats", field: "image_category", title: "Image Type" },
-    { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
-    { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
-    { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
-    { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
-  ]
-};
+      sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
+      refreshInterval: 300000,
+      fields: {
+        date: "createdDate",
+        imageType: "image_category",
+        issue: "mappedRejected_comment",
+        subIssue: "rejected_comment",
+        aiTag: "ai_tag",
+        enterprise: "enterprise_name",
+        rawImage: "RAW_INPUT",
+        aiImage: "ai_output",
+        manualImage: "manual",
+        imageId: "image_id"
+      },
+      statsCards: [
+        { id: "imageTypeStats", field: "image_category", title: "Image Type" },
+        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
+        { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
+        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
+      ]
+    };
 
-let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
+    let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
 
-const elements = {
-  loader: document.getElementById("loader"),
-  loaderText: document.getElementById("loaderText"),
-  toast: document.getElementById("toast"),
-  lastUpdated: document.getElementById("lastUpdated"),
-  filterDateFrom: document.getElementById("filterDateFrom"),
-  filterDateTo: document.getElementById("filterDateTo"),
-  filterIssue: document.getElementById("filterIssue"),
-  filterEnterprise: document.getElementById("filterEnterprise"),
-  
-};
+    const elements = {
+      loader: document.getElementById("loader"),
+      loaderText: document.getElementById("loaderText"),
+      toast: document.getElementById("toast"),
+      lastUpdated: document.getElementById("lastUpdated"),
+      filterDateFrom: document.getElementById("filterDateFrom"),
+      filterDateTo: document.getElementById("filterDateTo"),
+      filterIssue: document.getElementById("filterIssue"),
+      filterEnterprise: document.getElementById("filterEnterprise")
+    };
 
-document.addEventListener('DOMContentLoaded', initDashboard);
+    document.addEventListener('DOMContentLoaded', initDashboard);
 
-function initDashboard() {
-  showLoader("Loading dashboard...");
-  fetchData();
-  setupAutoRefresh();
-  const today = new Date();
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(today.getDate() - 30);
-  elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-  elements.filterDateTo.valueAsDate = today;
-}
+    function initDashboard() {
+      showLoader("Loading dashboard...");
+      fetchData();
+      setupAutoRefresh();
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
+    }
 
-function fetchData() {
-  $.ajax({
-    url: CONFIG.sheetUrl,
-    type: 'GET',
-    dataType: 'text',
-    success: function(response) {
-      const parsed = Papa.parse(response, {
-        header: true,
-        skipEmptyLines: true,
-        transform: value => value ? value.trim() : ''
+    function fetchData() {
+      $.ajax({
+        url: CONFIG.sheetUrl,
+        type: 'GET',
+        dataType: 'text',
+        success: function(response) {
+          const parsed = Papa.parse(response, { header: true, skipEmptyLines: true, transform: value => value ? value.trim() : '' });
+          if (parsed.errors.length) {
+            console.error(parsed.errors);
+            showToast("Error parsing data", true);
+            return;
+          }
+          allData = parsed.data.filter(row => Object.values(row).some(val => val));
+          allData.forEach(item => {
+            if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
+          });
+          filteredData = [...allData];
+          renderDashboard();
+          populateFilters();
+          loadCurrentImage();
+          updateLastUpdated();
+          showToast("Data loaded successfully");
+          hideLoader();
+        },
+        error: function(err) {
+          console.error(err);
+          showToast("Error loading data", true);
+          hideLoader();
+        }
       });
-      if (parsed.errors.length) {
-        console.error(parsed.errors);
-        showToast("Error parsing data", true);
-        return;
-      }
-      allData = parsed.data.filter(row => Object.values(row).some(val => val));
-      allData.forEach(item => {
-        if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
+    }
+
+    function renderDashboard(data = filteredData) {
+      CONFIG.statsCards.forEach(card => {
+        const container = document.getElementById(card.id);
+        const summary = summarizeData(data, card.field);
+        container.innerHTML = createStatsTable(summary, data.length);
       });
-      filteredData = [...allData];
+    }
+
+    function summarizeData(data, field) {
+      return data.reduce((acc, row) => {
+        const value = row[field] || 'Unknown';
+        acc[value] = (acc[value] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function createStatsTable(summaryData, totalCount) {
+      const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
+      let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
+      items.forEach(([key, count]) => {
+        const percentage = ((count / totalCount) * 100).toFixed(1);
+        html += `<tr><td>${key}</td><td>${count}</td><td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td></tr>`;
+      });
+      html += `</tbody></table>`;
+      return html;
+    }
+
+    function populateFilters() {
+      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
+      issueValues.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        elements.filterIssue.appendChild(opt);
+      });
+      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
+      enterpriseValues.forEach(val => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = val;
+        elements.filterEnterprise.appendChild(opt);
+      });
+    }
+
+    function applyFilters() {
+      showLoader("Applying filters...");
+      const from = elements.filterDateFrom.valueAsDate;
+      const to = elements.filterDateTo.valueAsDate;
+      const issue = elements.filterIssue.value;
+      const ent = elements.filterEnterprise.value;
+      filteredData = allData.filter(row => {
+        if (from && row.formattedDate < from) return false;
+        if (to) {
+          const end = new Date(to);
+          end.setHours(23, 59, 59, 999);
+          if (row.formattedDate > end) return false;
+        }
+        if (issue && row[CONFIG.fields.issue] !== issue) return false;
+        if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
+        return true;
+      });
+      currentImageIndex = 0;
       renderDashboard();
-      populateFilters();
       loadCurrentImage();
-      updateLastUpdated();
-      showToast("Data loaded successfully");
       hideLoader();
-    },
-    error: function(err) {
-      console.error(err);
-      showToast("Error loading data", true);
-      hideLoader();
+      showToast(`Showing ${filteredData.length} records`);
     }
-  });
-}
 
-function renderDashboard(data = filteredData) {
-  CONFIG.statsCards.forEach(card => {
-    const container = document.getElementById(card.id);
-    const summary = summarizeData(data, card.field);
-    container.innerHTML = createStatsTable(summary, data.length);
-  });
-}
-
-function summarizeData(data, field) {
-  return data.reduce((acc, row) => {
-    const value = row[field] || 'Unknown';
-    acc[value] = (acc[value] || 0) + 1;
-    return acc;
-  }, {});
-}
-
-function createStatsTable(summaryData, totalCount) {
-  const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-  let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
-
-  items.forEach(([key, count]) => {
-    const percentage = ((count / totalCount) * 100).toFixed(1);
-    html += `<tr><td>${key}</td><td>${count}</td><td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td></tr>`;
-  });
-
-  html += `</tbody></table>`;
-  return html;
-}
-
-function populateFilters() {
-  const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
-  issueValues.forEach(val => {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = val;
-    elements.filterIssue.appendChild(opt);
-  });
-  const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
-  enterpriseValues.forEach(val => {
-    const opt = document.createElement('option');
-    opt.value = val;
-    opt.textContent = val;
-    elements.filterEnterprise.appendChild(opt);
-  });
-}
-
-
-
-function applyFilters() {
-  showLoader("Applying filters...");
-  const from = elements.filterDateFrom.valueAsDate;
-  const to = elements.filterDateTo.valueAsDate;
-  const issue = elements.filterIssue.value;
-  const ent = elements.filterEnterprise.value;
-  filteredData = allData.filter(row => {
-    if (from && row.formattedDate < from) return false;
-    if (to) {
-      const end = new Date(to);
-      end.setHours(23, 59, 59, 999);
-      if (row.formattedDate > end) return false;
+    function refreshData() {
+      clearTimeout(refreshTimer);
+      showLoader("Refreshing data...");
+      fetchData();
     }
-    if (issue && row[CONFIG.fields.issue] !== issue) return false;
-    if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
-    return true;
-  });
-  currentImageIndex = 0;
-  renderDashboard();
-  loadCurrentImage();
-  hideLoader();
-  showToast(`Showing ${filteredData.length} records`);
-}
 
-function refreshData() {
-  clearTimeout(refreshTimer);
-  showLoader("Refreshing data...");
-  fetchData();
-}
+    function setupAutoRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshData();
+        setupAutoRefresh();
+      }, CONFIG.refreshInterval);
+    }
 
-function setupAutoRefresh() {
-  clearTimeout(refreshTimer);
-  refreshTimer = setTimeout(() => {
-    refreshData();
-    setupAutoRefresh();
-  }, CONFIG.refreshInterval);
-}
+    function showLoader(msg) {
+      elements.loaderText.textContent = msg;
+      elements.loader.style.display = 'flex';
+    }
 
-function showLoader(msg) {
-  elements.loaderText.textContent = msg;
-  elements.loader.style.display = 'flex';
-}
+    function hideLoader() {
+      elements.loader.style.display = 'none';
+    }
 
-function hideLoader() {
-  elements.loader.style.display = 'none';
-}
-
-function showToast(msg, isError = false) {
-  elements.toast.textContent = msg;
-  elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
-  elements.toast.classList.add('show');
-  setTimeout(() => elements.toast.classList.remove('show'), 3000);
-}
-
-function updateLastUpdated() {
-  elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
-}
-
-function loadCurrentImage() {
-  const panel = document.getElementById("imagePanels");
-  panel.innerHTML = "";
-  if (!filteredData.length) return;
-  for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
-    const item = filteredData[i];
-    const raw = item[CONFIG.fields.rawImage] || "";
-    const ai = item[CONFIG.fields.aiImage] || "";
-    const manual = item[CONFIG.fields.manualImage] || "";
-
-    [
-      { label: "Raw", src: raw },
-      { label: "AI", src: ai },
-      { label: "Manual", src: manual }
-    ].forEach(({ label, src }) => {
-      const imgPanel = document.createElement("div");
-      imgPanel.className = "image-panel";
-      imgPanel.innerHTML = `
-        <div class="image-panel-header">${label}</div>
-        <div class="image-container">
-          <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
-        </div>
-      `;
-      panel.appendChild(imgPanel);
-    });
-  }
-// This section connects the UI with Google Sheet data and handles logic for filtering, updating images, and rendering stats.
-}
-</script>
-  <!-- JavaScript Setup End -->
-  <!-- Body Section End -->
-</body>
-</html>
+    function showToast(msg, isError = false) {
+      elements
