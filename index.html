@@ -107,7 +107,7 @@
       transform: translateY(-1px);
     }
     
-    /* Percentage Cards Section - 3-column layout with 2 rows (Reduced Height) */
+    /* Percentage Cards Section - 3-column layout with 2 rows */
     .percentage-section {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -127,16 +127,16 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       flex: 1;
-      min-height: 180px; /* Reduced height */
+      min-height: 180px;
     }
     
     .percentage-card.full-height {
       flex: 2;
-      min-height: 375px; /* Reduced height (180px + 180px + 15px gap) */
+      min-height: 375px;
     }
     
     .percentage-card-header {
-      padding: 10px 15px; /* Reduced padding */
+      padding: 10px 15px;
       background: var(--primary-color);
       color: var(--white);
       font-weight: 500;
@@ -144,11 +144,64 @@
       font-size: 14px;
     }
     
+    /* Updated Percentage Card Body with scrollable table */
     .percentage-card-body {
-      padding: 10px; /* Reduced padding */
-      height: calc(100% - 38px); /* Adjusted for smaller header */
+      padding: 0;
+      height: calc(100% - 38px);
+      overflow: hidden;
+      font-size: 13px;
+    }
+    
+    .percentage-card-body table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .percentage-card-body thead {
+      position: sticky;
+      top: 0;
+      background-color: var(--white);
+      z-index: 1;
+    }
+    
+    .percentage-card-body tbody {
+      display: block;
+      max-height: 300px;
       overflow-y: auto;
-      font-size: 13px; /* Slightly smaller font */
+    }
+    
+    .percentage-card-body tr {
+      display: table;
+      width: 100%;
+      table-layout: fixed;
+    }
+    
+    .percentage-card-body th,
+    .percentage-card-body td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--medium-gray);
+    }
+    
+    .bar-cell {
+      position: relative;
+      height: 20px;
+    }
+    
+    .bar-cell span {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background-color: rgba(66, 133, 244, 0.2);
+      z-index: 0;
+    }
+    
+    .bar-cell div {
+      position: relative;
+      z-index: 1;
+      padding-left: 5px;
+      font-size: 12px;
     }
     
     /* Image Section */
@@ -201,40 +254,6 @@
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-    }
-    
-    /* Common Table Styles */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    
-    th, td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid var(--medium-gray);
-    }
-    
-    .bar-cell {
-      position: relative;
-      height: 20px;
-    }
-    
-    .bar-cell span {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      background-color: rgba(66, 133, 244, 0.2);
-      z-index: 0;
-    }
-    
-    .bar-cell div {
-      position: relative;
-      z-index: 1;
-      padding-left: 5px;
-      font-size: 12px;
     }
     
     /* Loader and Toast */
@@ -309,6 +328,10 @@
       .percentage-card.full-height {
         min-height: 160px;
       }
+      
+      .percentage-card-body tbody {
+        max-height: 200px;
+      }
     }
   </style>
 </head>
@@ -348,7 +371,7 @@
       </div>
     </div>
     
-    <!-- Percentage Cards Section - 3-column layout with 2 rows (Reduced Height) -->
+    <!-- Percentage Cards Section - 3-column layout with 2 rows -->
     <div class="percentage-section">
       <!-- Column 1 -->
       <div class="percentage-column">
@@ -551,12 +574,25 @@
       });
     }
     
-    // Create stats table
+    // Create stats table with limited rows and scroll
     function createStatsTable(summaryData, totalCount) {
       const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
+      const maxRows = 10; // Show only 10 rows initially
       
-      let html = '<table>';
-      items.forEach(([key, count]) => {
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Count</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      // Show first 10 rows
+      items.slice(0, maxRows).forEach(([key, count]) => {
         const percentage = ((count / totalCount) * 100).toFixed(1);
         html += `
           <tr>
@@ -569,7 +605,27 @@
           </tr>
         `;
       });
-      html += '</table>';
+      
+      // Add "Other" row if there are more than 10 items
+      if (items.length > maxRows) {
+        const remainingCount = items.slice(maxRows).reduce((sum, [_, count]) => sum + count, 0);
+        const remainingPercentage = ((remainingCount / totalCount) * 100).toFixed(1);
+        html += `
+          <tr>
+            <td>Other (${items.length - maxRows})</td>
+            <td>${remainingCount}</td>
+            <td class="bar-cell">
+              <span style="width: ${remainingPercentage}%"></span>
+              <div>${remainingPercentage}%</div>
+            </td>
+          </tr>
+        `;
+      }
+      
+      html += `
+          </tbody>
+        </table>
+      `;
       return html;
     }
     
