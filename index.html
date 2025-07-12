@@ -107,7 +107,7 @@
       transform: translateY(-1px);
     }
     
-    /* Percentage Cards Section - 3-column layout with 2 rows */
+    /* Percentage Cards Section - 3-column layout with 2 rows (Reduced Height) */
     .percentage-section {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -127,16 +127,16 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       flex: 1;
-      min-height: 250px;
+      min-height: 180px; /* Reduced height */
     }
     
     .percentage-card.full-height {
       flex: 2;
-      min-height: 515px; /* 250px + 250px + 15px gap */
+      min-height: 375px; /* Reduced height (180px + 180px + 15px gap) */
     }
     
     .percentage-card-header {
-      padding: 12px 15px;
+      padding: 10px 15px; /* Reduced padding */
       background: var(--primary-color);
       color: var(--white);
       font-weight: 500;
@@ -145,9 +145,10 @@
     }
     
     .percentage-card-body {
-      padding: 15px;
-      height: calc(100% - 42px);
+      padding: 10px; /* Reduced padding */
+      height: calc(100% - 38px); /* Adjusted for smaller header */
       overflow-y: auto;
+      font-size: 13px; /* Slightly smaller font */
     }
     
     /* Image Section */
@@ -304,9 +305,9 @@
         flex-direction: column;
       }
       
+      .percentage-card,
       .percentage-card.full-height {
-        flex: 1;
-        min-height: 250px;
+        min-height: 160px;
       }
     }
   </style>
@@ -347,7 +348,7 @@
       </div>
     </div>
     
-    <!-- Percentage Cards Section - 3-column layout with 2 rows -->
+    <!-- Percentage Cards Section - 3-column layout with 2 rows (Reduced Height) -->
     <div class="percentage-section">
       <!-- Column 1 -->
       <div class="percentage-column">
