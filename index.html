@@ -552,18 +552,16 @@ function summarizeData(data, field) {
 
 function createStatsTable(summaryData, totalCount) {
   const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-  const maxRows = 10;
   let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
-  items.slice(0, maxRows).forEach(([key, count]) => {
+
+  items.forEach(([key, count]) => {
     const percentage = ((count / totalCount) * 100).toFixed(1);
     html += `<tr><td>${key}</td><td>${count}</td><td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td></tr>`;
   });
-  if (items.length > maxRows) {
-    const remaining = items.slice(maxRows).reduce((sum, [, count]) => sum + count, 0);
-    const remPercent = ((remaining / totalCount) * 100).toFixed(1);
-    html += `<tr><td>Other (${items.length - maxRows})</td><td>${remaining}</td><td class="bar-cell"><span style="width:${remPercent}%"></span><div>${remPercent}%</div></td></tr>`;
-  }
+
   html += `</tbody></table>`;
+  return html;
+}
   return html;
 }
 
