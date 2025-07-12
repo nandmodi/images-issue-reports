@@ -137,6 +137,11 @@
       overflow-y: auto;
     }
     
+    /* Specific style for Sub Issue card to double its height */
+    #subIssueStats {
+      height: 500px; /* Double the original height */
+    }
+    
     /* Image Section */
     .image-section {
       background: var(--white);
@@ -287,6 +292,10 @@
       
       .percentage-section {
         grid-template-columns: repeat(2, 1fr);
+      }
+      
+      #subIssueStats {
+        height: 250px; /* Revert to normal height on smaller screens */
       }
     }
     
