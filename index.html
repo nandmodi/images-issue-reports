@@ -201,6 +201,15 @@
       border-bottom: 1px solid var(--medium-gray);
     }
     
+    /* Special styling for Sub Issue rows */
+    .main-issue-row {
+      background-color: rgba(66, 133, 244, 0.05);
+    }
+    
+    .sub-issue-row td:first-child {
+      padding-left: 20px !important;
+    }
+    
     .bar-cell {
       position: relative;
       height: 20px;
@@ -584,10 +593,10 @@
       }
     }
     
-    // Create stats table with limited rows for regular cards, full data for Sub Issue Wise
+    // Create stats table with special handling for Sub Issue Wise
     function createStatsTable(summaryData, totalCount, cardId) {
       const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-      const maxRows = 10; // Maximum rows to show before scrolling (for regular cards)
+      const maxRows = 10;
       const isSubIssueCard = cardId === 'subIssueStats';
       
       let html = `
@@ -602,24 +611,75 @@
           <tbody>
       `;
       
-      // For Sub Issue Wise card, show all rows
       if (isSubIssueCard) {
+        // Group sub-issues by main issue
+        const issueGroups = {};
+        
         items.forEach(([key, count]) => {
-          const percentage = ((count / totalCount) * 100).toFixed(1);
+          // Split into main issue and sub-issue (format: "Main Issue: Sub Issue")
+          const splitIndex = key.indexOf(':');
+          let mainIssue, subIssue;
+          
+          if (splitIndex !== -1) {
+            mainIssue = key.substring(0, splitIndex).trim();
+            subIssue = key.substring(splitIndex + 1).trim();
+          } else {
+            mainIssue = 'Other Issues';
+            subIssue = key;
+          }
+          
+          if (!issueGroups[mainIssue]) {
+            issueGroups[mainIssue] = {
+              total: 0,
+              subItems: []
+            };
+          }
+          
+          issueGroups[mainIssue].total += count;
+          issueGroups[mainIssue].subItems.push({
+            name: subIssue,
+            count: count
+          });
+        });
+        
+        // Convert to array and sort by total count
+        const sortedGroups = Object.entries(issueGroups)
+          .sort((a, b) => b[1].total - a[1].total);
+        
+        // Generate rows for each group
+        sortedGroups.forEach(([mainIssue, groupData]) => {
+          const percentage = ((groupData.total / totalCount) * 100).toFixed(1);
+          
+          // Main issue row
           html += `
-            <tr>
-              <td>${key || 'Unknown'}</td>
-              <td>${count}</td>
+            <tr class="main-issue-row">
+              <td><strong>${mainIssue}</strong></td>
+              <td><strong>${groupData.total}</strong></td>
               <td class="bar-cell">
                 <span style="width: ${percentage}%"></span>
-                <div>${percentage}%</div>
+                <div><strong>${percentage}%</strong></div>
               </td>
             </tr>
           `;
+          
+          // Sub-issue rows
+          groupData.subItems.sort((a, b) => b.count - a.count)
+            .forEach((subItem) => {
+              const subPercentage = ((subItem.count / totalCount) * 100).toFixed(1);
+              html += `
+                <tr class="sub-issue-row">
+                  <td style="padding-left: 20px">${subItem.name}</td>
+                  <td>${subItem.count}</td>
+                  <td class="bar-cell">
+                    <span style="width: ${subPercentage}%"></span>
+                    <div>${subPercentage}%</div>
+                  </td>
+                </tr>
+              `;
+            });
         });
-      } 
-      // For other cards, limit to 10 rows + Other
-      else {
+      } else {
+        // Regular card display (limited to maxRows + "Other")
         items.slice(0, maxRows).forEach(([key, count]) => {
           const percentage = ((count / totalCount) * 100).toFixed(1);
           html += `
