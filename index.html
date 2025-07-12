@@ -410,9 +410,7 @@
     <!-- Image Section -->
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
-      <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
-  <!-- Up to 5 images dynamically loaded -->
-</div>
+      <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;" id="imagePanels"></div>
         
         </div>
       </div>
@@ -570,8 +568,7 @@ function populateFilters() {
   });
 }
 
-$1 
-}
+
 
 function applyFilters() {
   showLoader("Applying filters...");
@@ -629,6 +626,35 @@ function showToast(msg, isError = false) {
 
 function updateLastUpdated() {
   elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
+}
+
+function loadCurrentImage() {
+  const panel = document.getElementById("imagePanels");
+  panel.innerHTML = "";
+  if (!filteredData.length) return;
+  for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
+    const item = filteredData[i];
+    const raw = item[CONFIG.fields.rawImage] || "";
+    const ai = item[CONFIG.fields.aiImage] || "";
+    const manual = item[CONFIG.fields.manualImage] || "";
+
+    [
+      { label: "Raw", src: raw },
+      { label: "AI", src: ai },
+      { label: "Manual", src: manual }
+    ].forEach(({ label, src }) => {
+      const imgPanel = document.createElement("div");
+      imgPanel.className = "image-panel";
+      imgPanel.innerHTML = `
+        <div class="image-panel-header">${label}</div>
+        <div class="image-container">
+          <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
+        </div>
+      `;
+      panel.appendChild(imgPanel);
+    });
+  }
+}`;
 }
     // This section connects the UI with Google Sheet data and handles logic for filtering, updating images, and rendering stats.
   </script>
