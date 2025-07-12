@@ -447,8 +447,7 @@
     const CONFIG = {
   sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
   refreshInterval: 300000,
-  imageBaseUrl: "https://example.com/images/",
-  fields: {
+    fields: {
     date: "createdDate",
     imageType: "image_category",
     issue: "mappedRejected_comment",
@@ -586,7 +585,7 @@ function loadCurrentImage() {
   ['rawImage', 'aiImage', 'manualImage'].forEach(type => {
     const field = CONFIG.fields[type];
     if (item[field]) {
-      elements[type].src = CONFIG.imageBaseUrl + item[field];
+      elements[type].src = item[field];
       elements[type].style.display = 'block';
     } else {
       elements[type].style.display = 'none';
