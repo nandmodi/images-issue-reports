@@ -31,12 +31,17 @@
       line-height: 1.6;
       color: #333;
       background-color: var(--light-gray);
-      padding: 20px;
+      padding: 10px;
+      width: 100vw;
+      overflow-x: hidden;
     }
 
     .container {
-      max-width: 1400px;
+      width: 100%;
+      max-width: 100%;
       margin: 0 auto;
+      padding: 0 10px;
+      box-sizing: border-box;
     }
 
     h1 {
@@ -405,13 +410,9 @@
     <!-- Image Section -->
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
-      <div class="image-panels">
-        <div class="image-panel">
-          <div class="image-panel-header">Raw</div>
-          <div class="image-container" id="rawImage">
-            <img src="" alt="Raw Image" style="display: none;">
-          </div>
-        </div>
+      <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
+  <!-- Up to 5 images dynamically loaded -->
+</div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container" id="aiImage">
@@ -580,14 +581,32 @@ function populateFilters() {
 }
 
 function loadCurrentImage() {
+  const panel = document.querySelector(".image-panels");
+  panel.innerHTML = "";
   if (!filteredData.length) return;
-  const item = filteredData[currentImageIndex];
-  ['rawImage', 'aiImage', 'manualImage'].forEach(type => {
-    const field = CONFIG.fields[type];
-    if (item[field]) {
-      elements[type].src = item[field];
-      elements[type].style.display = 'block';
-    } else {
+  for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
+    const item = filteredData[i];
+    const raw = item[CONFIG.fields.rawImage] || "";
+    const ai = item[CONFIG.fields.aiImage] || "";
+    const manual = item[CONFIG.fields.manualImage] || "";
+
+    [
+      { label: "Raw", src: raw },
+      { label: "AI", src: ai },
+      { label: "Manual", src: manual }
+    ].forEach(({ label, src }) => {
+      const imgPanel = document.createElement("div");
+      imgPanel.className = "image-panel";
+      imgPanel.innerHTML = `
+        <div class="image-panel-header">${label}</div>
+        <div class="image-container">
+          <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
+        </div>
+      `;
+      panel.appendChild(imgPanel);
+    });
+  }
+} else {
       elements[type].style.display = 'none';
     }
   });
