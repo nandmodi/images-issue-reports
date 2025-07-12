@@ -107,10 +107,10 @@
       transform: translateY(-1px);
     }
     
-    /* Percentage Cards Section */
+    /* Percentage Cards Section - Updated to 2-column layout */
     .percentage-section {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 15px;
       margin-bottom: 30px;
     }
@@ -120,6 +120,11 @@
       border-radius: 8px;
       box-shadow: var(--shadow);
       overflow: hidden;
+    }
+    
+    /* Make Sub Issue card span full width */
+    .percentage-card.sub-issue {
+      grid-column: span 2;
     }
     
     .percentage-card-header {
@@ -137,9 +142,9 @@
       overflow-y: auto;
     }
     
-    /* Specific style for Sub Issue card to double its height */
+    /* Make Sub Issue card taller */
     #subIssueStats {
-      height: 500px; /* Double the original height */
+      height: 300px;
     }
     
     /* Image Section */
@@ -285,25 +290,15 @@
       font-size: 14px;
     }
     
-    @media (max-width: 1200px) {
-      .filter-section {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      .percentage-section {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      
-      #subIssueStats {
-        height: 250px; /* Revert to normal height on smaller screens */
-      }
-    }
-    
     @media (max-width: 768px) {
       .filter-section,
       .percentage-section,
       .image-panels {
         grid-template-columns: 1fr;
+      }
+      
+      .percentage-card.sub-issue {
+        grid-column: span 1;
       }
     }
   </style>
@@ -344,7 +339,7 @@
       </div>
     </div>
     
-    <!-- Percentage Cards Section -->
+    <!-- Percentage Cards Section - Updated to match reference image -->
     <div class="percentage-section">
       <div class="percentage-card">
         <div class="percentage-card-header">Issue % Image Type</div>
@@ -356,11 +351,6 @@
         <div class="percentage-card-body" id="issueStats"></div>
       </div>
       
-      <div class="percentage-card" style="grid-column: span 2;">
-        <div class="percentage-card-header">Issue % Sub Issue Wise</div>
-        <div class="percentage-card-body" id="subIssueStats"></div>
-      </div>
-      
       <div class="percentage-card">
         <div class="percentage-card-header">Issue % AI Tag</div>
         <div class="percentage-card-body" id="aiTagStats"></div>
@@ -369,6 +359,11 @@
       <div class="percentage-card">
         <div class="percentage-card-header">Issue % Enterprise</div>
         <div class="percentage-card-body" id="enterpriseStats"></div>
+      </div>
+      
+      <div class="percentage-card sub-issue">
+        <div class="percentage-card-header">Issue % Sub Issue Wise</div>
+        <div class="percentage-card-body" id="subIssueStats"></div>
       </div>
     </div>
     
