@@ -144,21 +144,12 @@
       font-size: 14px;
     }
     
-    /* Updated Percentage Card Body styles */
+    /* Updated Percentage Card Body with scrollable table */
     .percentage-card-body {
       padding: 0;
+      height: calc(100% - 38px);
       overflow: hidden;
       font-size: 13px;
-    }
-    
-    /* Regular cards (limited height with scroll) */
-    .percentage-card:not(.full-height) .percentage-card-body {
-      height: 180px;
-    }
-    
-    /* Full height card (uses all available space) */
-    .percentage-card.full-height .percentage-card-body {
-      height: calc(100% - 38px);
     }
     
     .percentage-card-body table {
@@ -175,17 +166,8 @@
     
     .percentage-card-body tbody {
       display: block;
+      max-height: 300px;
       overflow-y: auto;
-    }
-    
-    /* Height for regular cards */
-    .percentage-card:not(.full-height) .percentage-card-body tbody {
-      max-height: 150px;
-    }
-    
-    /* Height for full-height card */
-    .percentage-card.full-height .percentage-card-body tbody {
-      max-height: calc(100% - 30px);
     }
     
     .percentage-card-body tr {
@@ -199,15 +181,6 @@
       padding: 8px 10px;
       text-align: left;
       border-bottom: 1px solid var(--medium-gray);
-    }
-    
-    /* Special styling for Sub Issue rows */
-    .main-issue-row {
-      background-color: rgba(66, 133, 244, 0.05);
-    }
-    
-    .sub-issue-row td:first-child {
-      padding-left: 20px !important;
     }
     
     .bar-cell {
@@ -356,8 +329,7 @@
         min-height: 160px;
       }
       
-      .percentage-card:not(.full-height) .percentage-card-body tbody,
-      .percentage-card.full-height .percentage-card-body tbody {
+      .percentage-card-body tbody {
         max-height: 200px;
       }
     }
@@ -593,11 +565,19 @@
       }
     }
     
-    // Create stats table with special handling for Sub Issue Wise
-    function createStatsTable(summaryData, totalCount, cardId) {
+    // Render the dashboard
+    function renderDashboard(data = filteredData) {
+      CONFIG.statsCards.forEach(card => {
+        const container = document.getElementById(card.id);
+        const summary = summarizeData(data, card.field);
+        container.innerHTML = createStatsTable(summary, data.length);
+      });
+    }
+    
+    // Create stats table with limited rows and scroll
+    function createStatsTable(summaryData, totalCount) {
       const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-      const maxRows = 10;
-      const isSubIssueCard = cardId === 'subIssueStats';
+      const maxRows = 10; // Show only 10 rows initially
       
       let html = `
         <table>
@@ -611,103 +591,35 @@
           <tbody>
       `;
       
-      if (isSubIssueCard) {
-        // Group sub-issues by main issue
-        const issueGroups = {};
-        
-        items.forEach(([key, count]) => {
-          // Split into main issue and sub-issue (format: "Main Issue: Sub Issue")
-          const splitIndex = key.indexOf(':');
-          let mainIssue, subIssue;
-          
-          if (splitIndex !== -1) {
-            mainIssue = key.substring(0, splitIndex).trim();
-            subIssue = key.substring(splitIndex + 1).trim();
-          } else {
-            mainIssue = 'Other Issues';
-            subIssue = key;
-          }
-          
-          if (!issueGroups[mainIssue]) {
-            issueGroups[mainIssue] = {
-              total: 0,
-              subItems: []
-            };
-          }
-          
-          issueGroups[mainIssue].total += count;
-          issueGroups[mainIssue].subItems.push({
-            name: subIssue,
-            count: count
-          });
-        });
-        
-        // Convert to array and sort by total count
-        const sortedGroups = Object.entries(issueGroups)
-          .sort((a, b) => b[1].total - a[1].total);
-        
-        // Generate rows for each group
-        sortedGroups.forEach(([mainIssue, groupData]) => {
-          const percentage = ((groupData.total / totalCount) * 100).toFixed(1);
-          
-          // Main issue row
-          html += `
-            <tr class="main-issue-row">
-              <td><strong>${mainIssue}</strong></td>
-              <td><strong>${groupData.total}</strong></td>
-              <td class="bar-cell">
-                <span style="width: ${percentage}%"></span>
-                <div><strong>${percentage}%</strong></div>
-              </td>
-            </tr>
-          `;
-          
-          // Sub-issue rows
-          groupData.subItems.sort((a, b) => b.count - a.count)
-            .forEach((subItem) => {
-              const subPercentage = ((subItem.count / totalCount) * 100).toFixed(1);
-              html += `
-                <tr class="sub-issue-row">
-                  <td style="padding-left: 20px">${subItem.name}</td>
-                  <td>${subItem.count}</td>
-                  <td class="bar-cell">
-                    <span style="width: ${subPercentage}%"></span>
-                    <div>${subPercentage}%</div>
-                  </td>
-                </tr>
-              `;
-            });
-        });
-      } else {
-        // Regular card display (limited to maxRows + "Other")
-        items.slice(0, maxRows).forEach(([key, count]) => {
-          const percentage = ((count / totalCount) * 100).toFixed(1);
-          html += `
-            <tr>
-              <td>${key || 'Unknown'}</td>
-              <td>${count}</td>
-              <td class="bar-cell">
-                <span style="width: ${percentage}%"></span>
-                <div>${percentage}%</div>
-              </td>
-            </tr>
-          `;
-        });
-        
-        if (items.length > maxRows) {
-          const remainingCount = items.slice(maxRows).reduce((sum, [_, count]) => sum + count, 0);
-          const remainingPercentage = ((remainingCount / totalCount) * 100).toFixed(1);
-          html += `
-            <tr>
-              <td>Other (${items.length - maxRows})</td>
-              <td>${remainingCount}</td>
-              <td class="bar-cell">
-                <span style="width: ${remainingPercentage}%"></span>
-                <div>${remainingPercentage}%</div>
-              </td>
-            </tr>
-          `;
-        }
+      // Show first 10 rows
+      items.slice(0, maxRows).forEach(([key, count]) => {
+        const percentage = ((count / totalCount) * 100).toFixed(1);
+        html += `
+          <tr>
+            <td>${key || 'Unknown'}</td>
+            <td>${count}</td>
+            <td class="bar-cell">
+              <span style="width: ${percentage}%"></span>
+              <div>${percentage}%</div>
+            </td>
+          </tr>
+        `;
+      });
+      
+      // Add "Other" row if there are more than 10 items
+      if (items.length > maxRows) {
+        const remainingCount = items.slice(maxRows).reduce((sum, [_, count]) => sum + count, 0);
+        const remainingPercentage = ((remainingCount / totalCount) * 100).toFixed(1);
+        html += `
+          <tr>
+            <td>Other (${items.length - maxRows})</td>
+            <td>${remainingCount}</td>
+            <td class="bar-cell">
+              <span style="width: ${remainingPercentage}%"></span>
+              <div>${remainingPercentage}%</div>
+            </td>
+          </tr>
+        `;
       }
       
       html += `
@@ -715,15 +627,6 @@
         </table>
       `;
       return html;
-    }
-    
-    // Render the dashboard
-    function renderDashboard(data = filteredData) {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        const summary = summarizeData(data, card.field);
-        container.innerHTML = createStatsTable(summary, data.length, card.id);
-      });
     }
     
     // Summarize data by field
