@@ -579,4 +579,49 @@
     }
 
     function showToast(msg, isError = false) {
-      elements
+      elements.toast.textContent = msg;
+      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+      elements.toast.classList.add('show');
+      setTimeout(() => elements.toast.classList.remove('show'), 3000);
+    }
+
+    function updateLastUpdated() {
+      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
+    }
+
+    function loadCurrentImage() {
+      const panel = document.getElementById("imagePanels");
+      panel.innerHTML = "";
+      if (!filteredData.length) return;
+
+      for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
+        const item = filteredData[i];
+        const raw = item[CONFIG.fields.rawImage] || "";
+        const ai = item[CONFIG.fields.aiImage] || "";
+        const manual = item[CONFIG.fields.manualImage] || "";
+
+        const row = document.createElement("div");
+        row.className = "image-row";
+
+        [
+          { label: "Raw", src: raw },
+          { label: "AI", src: ai },
+          { label: "Manual", src: manual }
+        ].forEach(({ label, src }) => {
+          const imgPanel = document.createElement("div");
+          imgPanel.className = "image-panel";
+          imgPanel.innerHTML = `
+            <div class="image-panel-header">${label}</div>
+            <div class="image-container">
+              <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
+            </div>
+          `;
+          row.appendChild(imgPanel);
+        });
+
+        panel.appendChild(row);
+      }
+    }
+  </script>
+</body>
+</html>
