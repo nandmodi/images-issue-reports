@@ -411,9 +411,6 @@
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;" id="imagePanels"></div>
-        
-        </div>
-      </div>
     </div>
 
     <!-- Footer -->
@@ -468,9 +465,7 @@ const elements = {
   filterDateTo: document.getElementById("filterDateTo"),
   filterIssue: document.getElementById("filterIssue"),
   filterEnterprise: document.getElementById("filterEnterprise"),
-  rawImage: document.querySelector("#rawImage img"),
-  aiImage: document.querySelector("#aiImage img"),
-  manualImage: document.querySelector("#manualImage img")
+  
 };
 
 document.addEventListener('DOMContentLoaded', initDashboard);
@@ -654,8 +649,10 @@ function loadCurrentImage() {
       panel.appendChild(imgPanel);
     });
   }
+}
 // This section connects the UI with Google Sheet data and handles logic for filtering, updating images, and rendering stats.
-  </script>
+}
+</script>
   <!-- JavaScript Setup End -->
   <!-- Body Section End -->
 </body>
