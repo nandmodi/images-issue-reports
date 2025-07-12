@@ -107,11 +107,11 @@
       transform: translateY(-1px);
     }
     
-    /* Percentage Cards Section - Custom Grid Layout */
+    /* Percentage Cards Section - 3-column layout with 2 rows */
     .percentage-section {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: auto auto auto;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: auto auto;
       gap: 15px;
       margin-bottom: 30px;
     }
@@ -121,20 +121,13 @@
       border-radius: 8px;
       box-shadow: var(--shadow);
       overflow: hidden;
-    }
-    
-    /* Height Classes */
-    .h-2 {
       height: 250px;
     }
     
-    .h-4 {
-      height: 500px;
-    }
-    
-    /* Full Width Card */
-    .full-width {
+    /* Full Width Card - spans 2 columns */
+    .percentage-card.full-width {
       grid-column: span 2;
+      height: 300px;
     }
     
     .percentage-card-header {
@@ -148,6 +141,7 @@
     
     .percentage-card-body {
       padding: 15px;
+      height: calc(100% - 42px);
       overflow-y: auto;
     }
     
@@ -305,7 +299,7 @@
         grid-column: span 1;
       }
       
-      .h-2, .h-4 {
+      .percentage-card {
         height: auto;
         min-height: 250px;
       }
@@ -348,32 +342,31 @@
       </div>
     </div>
     
-    <!-- Percentage Cards Section - Custom Grid Layout -->
+    <!-- Percentage Cards Section - 3-column layout with 2 rows -->
     <div class="percentage-section">
       <!-- First Row -->
-      <div class="percentage-card h-2">
+      <div class="percentage-card">
         <div class="percentage-card-header">Issue % Image Type</div>
         <div class="percentage-card-body" id="imageTypeStats"></div>
       </div>
       
-      <div class="percentage-card h-2">
+      <div class="percentage-card">
         <div class="percentage-card-header">Issue % Issue Wise</div>
         <div class="percentage-card-body" id="issueStats"></div>
       </div>
       
-      <!-- Second Row -->
-      <div class="percentage-card h-2">
+      <div class="percentage-card">
         <div class="percentage-card-header">Issue % AI Tag</div>
         <div class="percentage-card-body" id="aiTagStats"></div>
       </div>
       
-      <div class="percentage-card h-2">
+      <!-- Second Row -->
+      <div class="percentage-card">
         <div class="percentage-card-header">Issue % Enterprise</div>
         <div class="percentage-card-body" id="enterpriseStats"></div>
       </div>
       
-      <!-- Third Row - Full Width -->
-      <div class="percentage-card h-4 full-width">
+      <div class="percentage-card full-width">
         <div class="percentage-card-header">Issue % Sub Issue Wise</div>
         <div class="percentage-card-body" id="subIssueStats"></div>
       </div>
