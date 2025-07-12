@@ -413,17 +413,7 @@
       <div class="image-panels" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 10px;">
   <!-- Up to 5 images dynamically loaded -->
 </div>
-        <div class="image-panel">
-          <div class="image-panel-header">AI</div>
-          <div class="image-container" id="aiImage">
-            <img src="" alt="AI Image" style="display: none;">
-          </div>
-        </div>
-        <div class="image-panel">
-          <div class="image-panel-header">Manual</div>
-          <div class="image-container" id="manualImage">
-            <img src="" alt="Manual Image" style="display: none;">
-          </div>
+        
         </div>
       </div>
     </div>
@@ -606,10 +596,7 @@ function loadCurrentImage() {
       panel.appendChild(imgPanel);
     });
   }
-} else {
-      elements[type].style.display = 'none';
-    }
-  });
+} 
 }
 
 function applyFilters() {
