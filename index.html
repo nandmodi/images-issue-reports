@@ -19,13 +19,13 @@
       --white: #ffffff;
       --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
-    
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
-    
+
     body {
       font-family: 'Roboto', sans-serif;
       line-height: 1.6;
@@ -33,20 +33,19 @@
       background-color: var(--light-gray);
       padding: 20px;
     }
-    
+
     .container {
       max-width: 1400px;
       margin: 0 auto;
     }
-    
+
     h1 {
       text-align: center;
       margin: 20px 0 30px;
       color: var(--primary-color);
       font-weight: 500;
     }
-    
-    /* Filter Section */
+
     .filter-section {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -57,18 +56,18 @@
       border-radius: 8px;
       box-shadow: var(--shadow);
     }
-    
+
     .filter-group {
       display: flex;
       flex-direction: column;
     }
-    
+
     .filter-group label {
       margin-bottom: 5px;
       font-weight: 500;
       color: var(--dark-gray);
     }
-    
+
     .filter-group input,
     .filter-group select {
       padding: 10px;
@@ -76,13 +75,13 @@
       border-radius: 4px;
       font-size: 14px;
     }
-    
+
     .filter-actions {
       display: flex;
       align-items: flex-end;
       gap: 10px;
     }
-    
+
     .btn {
       padding: 10px 20px;
       border: none;
@@ -91,36 +90,35 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    
+
     .btn-primary {
       background-color: var(--primary-color);
       color: var(--white);
     }
-    
+
     .btn-danger {
       background-color: var(--danger-color);
       color: var(--white);
     }
-    
+
     .btn:hover {
       opacity: 0.9;
       transform: translateY(-1px);
     }
-    
-    /* Percentage Cards Section - 3-column layout with 2 rows */
+
     .percentage-section {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 15px;
       margin-bottom: 30px;
     }
-    
+
     .percentage-column {
       display: flex;
       flex-direction: column;
       gap: 15px;
     }
-    
+
     .percentage-card {
       background: var(--white);
       border-radius: 8px;
@@ -129,12 +127,12 @@
       flex: 1;
       min-height: 180px;
     }
-    
+
     .percentage-card.full-height {
       flex: 2;
       min-height: 375px;
     }
-    
+
     .percentage-card-header {
       padding: 10px 15px;
       background: var(--primary-color);
@@ -143,51 +141,50 @@
       text-align: center;
       font-size: 14px;
     }
-    
-    /* Updated Percentage Card Body with scrollable table */
+
     .percentage-card-body {
       padding: 0;
       height: calc(100% - 38px);
       overflow: hidden;
       font-size: 13px;
     }
-    
+
     .percentage-card-body table {
       width: 100%;
       border-collapse: collapse;
     }
-    
+
     .percentage-card-body thead {
       position: sticky;
       top: 0;
       background-color: var(--white);
       z-index: 1;
     }
-    
+
     .percentage-card-body tbody {
       display: block;
       max-height: 300px;
       overflow-y: auto;
     }
-    
+
     .percentage-card-body tr {
       display: table;
       width: 100%;
       table-layout: fixed;
     }
-    
+
     .percentage-card-body th,
     .percentage-card-body td {
       padding: 8px 10px;
       text-align: left;
       border-bottom: 1px solid var(--medium-gray);
     }
-    
+
     .bar-cell {
       position: relative;
       height: 20px;
     }
-    
+
     .bar-cell span {
       position: absolute;
       top: 0;
@@ -196,15 +193,14 @@
       background-color: rgba(66, 133, 244, 0.2);
       z-index: 0;
     }
-    
+
     .bar-cell div {
       position: relative;
       z-index: 1;
       padding-left: 5px;
       font-size: 12px;
     }
-    
-    /* Image Section */
+
     .image-section {
       background: var(--white);
       border-radius: 8px;
@@ -212,33 +208,33 @@
       padding: 20px;
       margin-bottom: 30px;
     }
-    
+
     .image-section-header {
       font-weight: 500;
       color: var(--primary-color);
       margin-bottom: 15px;
       text-align: center;
     }
-    
+
     .image-panels {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 15px;
     }
-    
+
     .image-panel {
       background: var(--light-gray);
       border-radius: 6px;
       padding: 15px;
       text-align: center;
     }
-    
+
     .image-panel-header {
       font-weight: 500;
       margin-bottom: 15px;
       color: var(--dark-gray);
     }
-    
+
     .image-container {
       height: 200px;
       display: flex;
@@ -249,14 +245,13 @@
       border-radius: 4px;
       overflow: hidden;
     }
-    
+
     .image-container img {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
     }
-    
-    /* Loader and Toast */
+
     #loader {
       position: fixed;
       top: 0;
@@ -271,7 +266,7 @@
       z-index: 1000;
       display: none;
     }
-    
+
     .spinner {
       width: 50px;
       height: 50px;
@@ -281,11 +276,11 @@
       animation: spin 1s ease-in-out infinite;
       margin-bottom: 15px;
     }
-    
+
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    
+
     #toast {
       position: fixed;
       bottom: 30px;
@@ -300,80 +295,85 @@
       opacity: 0;
       transition: all 0.3s;
     }
-    
+
     #toast.show {
       visibility: visible;
       opacity: 1;
     }
-    
+
     .footer {
       text-align: center;
       margin-top: 30px;
       color: var(--dark-gray);
       font-size: 14px;
     }
-    
+
     @media (max-width: 768px) {
       .filter-section,
       .percentage-section,
       .image-panels {
         grid-template-columns: 1fr;
       }
-      
+
       .percentage-column {
         flex-direction: column;
       }
-      
+
       .percentage-card,
       .percentage-card.full-height {
         min-height: 160px;
       }
-      
+
       .percentage-card-body tbody {
         max-height: 200px;
       }
     }
+
+    /* ✅ Added scroll only for Sub Issue card */
+    .percentage-card-body#subIssueStats {
+      overflow-x: auto;
+    }
+
+    .percentage-card-body#subIssueStats table {
+      min-width: 600px;
+      table-layout: auto !important;
+    }
   </style>
 </head>
 <body>
+  <!-- Body Section Start -->
   <div class="container">
     <h1>Image Review Dashboard</h1>
-    
     <!-- Filter Section -->
     <div class="filter-section">
       <div class="filter-group">
         <label for="filterDateFrom">Date Range (From)</label>
         <input type="date" id="filterDateFrom">
       </div>
-      
       <div class="filter-group">
         <label for="filterDateTo">Date Range (To)</label>
         <input type="date" id="filterDateTo">
       </div>
-      
       <div class="filter-group">
         <label for="filterIssue">Issue</label>
         <select id="filterIssue">
           <option value="">All Issues</option>
         </select>
       </div>
-      
       <div class="filter-group">
         <label for="filterEnterprise">Enterprise</label>
         <select id="filterEnterprise">
           <option value="">All Enterprises</option>
         </select>
       </div>
-      
       <div class="filter-actions">
         <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
         <button class="btn btn-danger" onclick="refreshData()">Refresh</button>
       </div>
     </div>
-    
-    <!-- Percentage Cards Section - 3-column layout with 2 rows -->
+
+    <!-- Percentage Cards Section -->
     <div class="percentage-section">
-      <!-- Column 1 -->
       <div class="percentage-column">
         <div class="percentage-card">
           <div class="percentage-card-header">Issue % Image Type</div>
@@ -384,8 +384,6 @@
           <div class="percentage-card-body" id="issueStats"></div>
         </div>
       </div>
-      
-      <!-- Column 2 -->
       <div class="percentage-column">
         <div class="percentage-card">
           <div class="percentage-card-header">Issue % AI Tag</div>
@@ -396,8 +394,6 @@
           <div class="percentage-card-body" id="enterpriseStats"></div>
         </div>
       </div>
-      
-      <!-- Column 3 - Single tall card -->
       <div class="percentage-column">
         <div class="percentage-card full-height">
           <div class="percentage-card-header">Issue % Sub Issue Wise</div>
@@ -405,7 +401,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Image Section -->
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
@@ -416,14 +412,12 @@
             <img src="" alt="Raw Image" style="display: none;">
           </div>
         </div>
-        
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container" id="aiImage">
             <img src="" alt="AI Image" style="display: none;">
           </div>
         </div>
-        
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container" id="manualImage">
@@ -432,347 +426,238 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- Footer -->
     <div class="footer">
       <p id="lastUpdated">Last updated: Never</p>
     </div>
   </div>
-  
+
   <!-- Loader -->
   <div id="loader">
     <div class="spinner"></div>
     <div id="loaderText">Loading data...</div>
   </div>
-  
+
   <!-- Toast Notification -->
   <div id="toast"></div>
-  
+
+  <!-- JavaScript Setup Start -->
   <script>
-    // Configuration
     const CONFIG = {
-      sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 300000,
-      imageBaseUrl: "https://example.com/images/",
-      
-      // Field mappings
-      fields: {
-        date: "createdDate",
-        imageType: "image_category",
-        issue: "mappedRejected_comment",
-        subIssue: "rejected_comment",
-        aiTag: "ai_tag",
-        enterprise: "enterprise_name",
-        rawImage: "RAW_INPUT",
-        aiImage: "ai_output",
-        manualImage: "manual",
-        imageId: "image_id"
-      },
-      
-      // Stats cards configuration
-      statsCards: [
-        { id: "imageTypeStats", field: "image_category", title: "Image Type" },
-        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
-        { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
-        { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
-        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
-      ]
-    };
-    
-    // Global variables
-    let allData = [];
-    let filteredData = [];
-    let currentImageIndex = 0;
-    let refreshTimer = null;
-    
-    // DOM Elements
-    const elements = {
-      loader: document.getElementById("loader"),
-      loaderText: document.getElementById("loaderText"),
-      toast: document.getElementById("toast"),
-      lastUpdated: document.getElementById("lastUpdated"),
-      filterDateFrom: document.getElementById("filterDateFrom"),
-      filterDateTo: document.getElementById("filterDateTo"),
-      filterIssue: document.getElementById("filterIssue"),
-      filterEnterprise: document.getElementById("filterEnterprise"),
-      rawImage: document.querySelector("#rawImage img"),
-      aiImage: document.querySelector("#aiImage img"),
-      manualImage: document.querySelector("#manualImage img")
-    };
-    
-    // Initialize the dashboard
-    async function initDashboard() {
-      showLoader("Loading dashboard...");
-      await fetchData();
-      setupAutoRefresh();
-      
-      // Set default date range (last 30 days)
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
-    }
-    
-    // Fetch data from Google Sheets
-    async function fetchData() {
-      try {
-        const response = await $.ajax({
-          url: CONFIG.sheetUrl,
-          type: 'GET',
-          dataType: 'text'
-        });
-        
-        const parsed = Papa.parse(response, {
-          header: true,
-          skipEmptyLines: true,
-          transform: (value) => value ? value.trim() : ''
-        });
-        
-        if (parsed.errors.length > 0) {
-          console.error("Parsing errors:", parsed.errors);
-          showToast("Error parsing data", true);
-          return;
-        }
-        
-        allData = parsed.data.filter(row => 
-          Object.values(row).some(val => val && val.toString().trim() !== "")
-        );
-        
-        if (allData.length === 0) {
-          showToast("No valid data found", true);
-          return;
-        }
-        
-        // Format dates
-        allData.forEach(item => {
-          if (item[CONFIG.fields.date]) {
-            item.formattedDate = new Date(item[CONFIG.fields.date]);
-          }
-        });
-        
-        filteredData = [...allData];
-        renderDashboard();
-        populateFilters();
-        loadCurrentImage();
-        updateLastUpdated();
-        showToast("Data loaded successfully");
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        showToast("Error loading data", true);
-      } finally {
-        hideLoader();
+  sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
+  refreshInterval: 300000,
+  imageBaseUrl: "https://example.com/images/",
+  fields: {
+    date: "createdDate",
+    imageType: "image_category",
+    issue: "mappedRejected_comment",
+    subIssue: "rejected_comment",
+    aiTag: "ai_tag",
+    enterprise: "enterprise_name",
+    rawImage: "RAW_INPUT",
+    aiImage: "ai_output",
+    manualImage: "manual",
+    imageId: "image_id"
+  },
+  statsCards: [
+    { id: "imageTypeStats", field: "image_category", title: "Image Type" },
+    { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+    { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
+    { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
+    { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
+  ]
+};
+
+let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
+
+const elements = {
+  loader: document.getElementById("loader"),
+  loaderText: document.getElementById("loaderText"),
+  toast: document.getElementById("toast"),
+  lastUpdated: document.getElementById("lastUpdated"),
+  filterDateFrom: document.getElementById("filterDateFrom"),
+  filterDateTo: document.getElementById("filterDateTo"),
+  filterIssue: document.getElementById("filterIssue"),
+  filterEnterprise: document.getElementById("filterEnterprise"),
+  rawImage: document.querySelector("#rawImage img"),
+  aiImage: document.querySelector("#aiImage img"),
+  manualImage: document.querySelector("#manualImage img")
+};
+
+document.addEventListener('DOMContentLoaded', initDashboard);
+
+function initDashboard() {
+  showLoader("Loading dashboard...");
+  fetchData();
+  setupAutoRefresh();
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+  elements.filterDateTo.valueAsDate = today;
+}
+
+function fetchData() {
+  $.ajax({
+    url: CONFIG.sheetUrl,
+    type: 'GET',
+    dataType: 'text',
+    success: function(response) {
+      const parsed = Papa.parse(response, {
+        header: true,
+        skipEmptyLines: true,
+        transform: value => value ? value.trim() : ''
+      });
+      if (parsed.errors.length) {
+        console.error(parsed.errors);
+        showToast("Error parsing data", true);
+        return;
       }
-    }
-    
-    // Render the dashboard
-    function renderDashboard(data = filteredData) {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        const summary = summarizeData(data, card.field);
-        container.innerHTML = createStatsTable(summary, data.length);
+      allData = parsed.data.filter(row => Object.values(row).some(val => val));
+      allData.forEach(item => {
+        if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
       });
-    }
-    
-    // Create stats table with limited rows and scroll
-    function createStatsTable(summaryData, totalCount) {
-      const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-      const maxRows = 10; // Show only 10 rows initially
-      
-      let html = `
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Count</th>
-              <th>Percentage</th>
-            </tr>
-          </thead>
-          <tbody>
-      `;
-      
-      // Show first 10 rows
-      items.slice(0, maxRows).forEach(([key, count]) => {
-        const percentage = ((count / totalCount) * 100).toFixed(1);
-        html += `
-          <tr>
-            <td>${key || 'Unknown'}</td>
-            <td>${count}</td>
-            <td class="bar-cell">
-              <span style="width: ${percentage}%"></span>
-              <div>${percentage}%</div>
-            </td>
-          </tr>
-        `;
-      });
-      
-      // Add "Other" row if there are more than 10 items
-      if (items.length > maxRows) {
-        const remainingCount = items.slice(maxRows).reduce((sum, [_, count]) => sum + count, 0);
-        const remainingPercentage = ((remainingCount / totalCount) * 100).toFixed(1);
-        html += `
-          <tr>
-            <td>Other (${items.length - maxRows})</td>
-            <td>${remainingCount}</td>
-            <td class="bar-cell">
-              <span style="width: ${remainingPercentage}%"></span>
-              <div>${remainingPercentage}%</div>
-            </td>
-          </tr>
-        `;
-      }
-      
-      html += `
-          </tbody>
-        </table>
-      `;
-      return html;
-    }
-    
-    // Summarize data by field
-    function summarizeData(data, field) {
-      const summary = {};
-      
-      data.forEach(row => {
-        const value = row[field] || 'Unknown';
-        summary[value] = (summary[value] || 0) + 1;
-      });
-      
-      return summary;
-    }
-    
-    // Populate filters
-    function populateFilters() {
-      // Populate Issue filter
-      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
-      issueValues.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        elements.filterIssue.appendChild(option);
-      });
-      
-      // Populate Enterprise filter
-      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
-      enterpriseValues.forEach(value => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        elements.filterEnterprise.appendChild(option);
-      });
-    }
-    
-    // Load current image
-    function loadCurrentImage() {
-      if (filteredData.length === 0) return;
-      
-      const currentItem = filteredData[currentImageIndex];
-      
-      // Update image displays
-      if (currentItem[CONFIG.fields.rawImage]) {
-        elements.rawImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.rawImage];
-        elements.rawImage.style.display = 'block';
-      } else {
-        elements.rawImage.style.display = 'none';
-      }
-      
-      if (currentItem[CONFIG.fields.aiImage]) {
-        elements.aiImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.aiImage];
-        elements.aiImage.style.display = 'block';
-      } else {
-        elements.aiImage.style.display = 'none';
-      }
-      
-      if (currentItem[CONFIG.fields.manualImage]) {
-        elements.manualImage.src = CONFIG.imageBaseUrl + currentItem[CONFIG.fields.manualImage];
-        elements.manualImage.style.display = 'block';
-      } else {
-        elements.manualImage.style.display = 'none';
-      }
-    }
-    
-    // Apply filters
-    function applyFilters() {
-      showLoader("Applying filters...");
-      
-      const dateFrom = elements.filterDateFrom.valueAsDate;
-      const dateTo = elements.filterDateTo.valueAsDate;
-      const issueFilter = elements.filterIssue.value;
-      const enterpriseFilter = elements.filterEnterprise.value;
-      
-      filteredData = allData.filter(row => {
-        // Date filter
-        if (dateFrom && row.formattedDate) {
-          if (row.formattedDate < dateFrom) return false;
-        }
-        if (dateTo && row.formattedDate) {
-          const endOfDay = new Date(dateTo);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (row.formattedDate > endOfDay) return false;
-        }
-        
-        // Issue filter
-        if (issueFilter && row[CONFIG.fields.issue] !== issueFilter) {
-          return false;
-        }
-        
-        // Enterprise filter
-        if (enterpriseFilter && row[CONFIG.fields.enterprise] !== enterpriseFilter) {
-          return false;
-        }
-        
-        return true;
-      });
-      
-      currentImageIndex = 0;
+      filteredData = [...allData];
       renderDashboard();
+      populateFilters();
       loadCurrentImage();
+      updateLastUpdated();
+      showToast("Data loaded successfully");
       hideLoader();
-      showToast(`Showing ${filteredData.length} records`);
+    },
+    error: function(err) {
+      console.error(err);
+      showToast("Error loading data", true);
+      hideLoader();
     }
-    
-    // Refresh data
-    function refreshData() {
-      clearTimeout(refreshTimer);
-      showLoader("Refreshing data...");
-      fetchData();
+  });
+}
+
+function renderDashboard(data = filteredData) {
+  CONFIG.statsCards.forEach(card => {
+    const container = document.getElementById(card.id);
+    const summary = summarizeData(data, card.field);
+    container.innerHTML = createStatsTable(summary, data.length);
+  });
+}
+
+function summarizeData(data, field) {
+  return data.reduce((acc, row) => {
+    const value = row[field] || 'Unknown';
+    acc[value] = (acc[value] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function createStatsTable(summaryData, totalCount) {
+  const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
+  const maxRows = 10;
+  let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
+  items.slice(0, maxRows).forEach(([key, count]) => {
+    const percentage = ((count / totalCount) * 100).toFixed(1);
+    html += `<tr><td>${key}</td><td>${count}</td><td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td></tr>`;
+  });
+  if (items.length > maxRows) {
+    const remaining = items.slice(maxRows).reduce((sum, [, count]) => sum + count, 0);
+    const remPercent = ((remaining / totalCount) * 100).toFixed(1);
+    html += `<tr><td>Other (${items.length - maxRows})</td><td>${remaining}</td><td class="bar-cell"><span style="width:${remPercent}%"></span><div>${remPercent}%</div></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  return html;
+}
+
+function populateFilters() {
+  const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
+  issueValues.forEach(val => {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    elements.filterIssue.appendChild(opt);
+  });
+  const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
+  enterpriseValues.forEach(val => {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val;
+    elements.filterEnterprise.appendChild(opt);
+  });
+}
+
+function loadCurrentImage() {
+  if (!filteredData.length) return;
+  const item = filteredData[currentImageIndex];
+  ['rawImage', 'aiImage', 'manualImage'].forEach(type => {
+    const field = CONFIG.fields[type];
+    if (item[field]) {
+      elements[type].src = CONFIG.imageBaseUrl + item[field];
+      elements[type].style.display = 'block';
+    } else {
+      elements[type].style.display = 'none';
     }
-    
-    // Set up auto-refresh
-    function setupAutoRefresh() {
-      clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        refreshData();
-        setupAutoRefresh();
-      }, CONFIG.refreshInterval);
+  });
+}
+
+function applyFilters() {
+  showLoader("Applying filters...");
+  const from = elements.filterDateFrom.valueAsDate;
+  const to = elements.filterDateTo.valueAsDate;
+  const issue = elements.filterIssue.value;
+  const ent = elements.filterEnterprise.value;
+  filteredData = allData.filter(row => {
+    if (from && row.formattedDate < from) return false;
+    if (to) {
+      const end = new Date(to);
+      end.setHours(23, 59, 59, 999);
+      if (row.formattedDate > end) return false;
     }
-    
-    // UI Helpers
-    function showLoader(message) {
-      elements.loaderText.textContent = message;
-      elements.loader.style.display = 'flex';
-    }
-    
-    function hideLoader() {
-      elements.loader.style.display = 'none';
-    }
-    
-    function showToast(message, isError = false) {
-      elements.toast.textContent = message;
-      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
-      elements.toast.classList.add('show');
-      
-      setTimeout(() => {
-        elements.toast.classList.remove('show');
-      }, 3000);
-    }
-    
-    function updateLastUpdated() {
-      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
-    }
-    
-    // Initialize the dashboard when the page loads
-    document.addEventListener('DOMContentLoaded', initDashboard);
+    if (issue && row[CONFIG.fields.issue] !== issue) return false;
+    if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
+    return true;
+  });
+  currentImageIndex = 0;
+  renderDashboard();
+  loadCurrentImage();
+  hideLoader();
+  showToast(`Showing ${filteredData.length} records`);
+}
+
+function refreshData() {
+  clearTimeout(refreshTimer);
+  showLoader("Refreshing data...");
+  fetchData();
+}
+
+function setupAutoRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    refreshData();
+    setupAutoRefresh();
+  }, CONFIG.refreshInterval);
+}
+
+function showLoader(msg) {
+  elements.loaderText.textContent = msg;
+  elements.loader.style.display = 'flex';
+}
+
+function hideLoader() {
+  elements.loader.style.display = 'none';
+}
+
+function showToast(msg, isError = false) {
+  elements.toast.textContent = msg;
+  elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+  elements.toast.classList.add('show');
+  setTimeout(() => elements.toast.classList.remove('show'), 3000);
+}
+
+function updateLastUpdated() {
+  elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
+}
+    This section connects the UI with Google Sheet data and handles logic for filtering, updating images, and rendering stats.
   </script>
+  <!-- JavaScript Setup End -->
+  <!-- Body Section End -->
 </body>
 </html>
