@@ -9,6 +9,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
+    /* Your existing CSS remains unchanged */
     :root {
       --primary-color: #4285f4;
       --secondary-color: #34a853;
@@ -284,12 +285,6 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .image-container img.loaded {
-      opacity: 1;
     }
 
     #loader {
@@ -347,23 +342,6 @@
       margin-top: 30px;
       color: var(--dark-gray);
       font-size: 14px;
-    }
-
-    .filter-status {
-      margin: 10px 0;
-      padding: 8px 15px;
-      background-color: var(--light-gray);
-      border-radius: 4px;
-      font-size: 14px;
-      color: var(--dark-gray);
-      font-style: italic;
-    }
-
-    .no-images {
-      text-align: center;
-      padding: 20px;
-      color: var(--dark-gray);
-      font-style: italic;
     }
 
     @media (max-width: 768px) {
@@ -452,8 +430,6 @@
       </div>
     </div>
 
-    <div id="filterStatus" class="filter-status">No filters active</div>
-
     <div class="percentage-section">
       <div class="percentage-column">
         <div class="percentage-card">
@@ -505,7 +481,7 @@
   <script>
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 86400000,
+      refreshInterval: 86400000, // 24 hours in milliseconds
       fields: {
         date: "createdDate",
         imageType: "image_category",
@@ -525,15 +501,13 @@
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
       ],
-      imagesPerBatch: 10,
+      imagesPerBatch: 10, // Changed to 10 images per batch
       imageUrlPrefix: "https://media.spyneai.com/unsafe/0x0/filters:format(webp)/"
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
     let uniqueImages = new Set();
     let isLoading = false;
-    let isInitialLoad = true;
-    let imagesLoading = 0;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -545,17 +519,18 @@
       filterIssue: document.getElementById("filterIssue"),
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
-      loadMoreBtn: document.getElementById("loadMoreBtn"),
-      filterStatus: document.getElementById("filterStatus")
+      loadMoreBtn: document.getElementById("loadMoreBtn")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
-      showLoader("Initializing dashboard...");
+      showLoader("Loading dashboard...");
       fetchData();
       setupAutoRefresh();
       resetFilters();
+      
+      // Initialize infinite scroll
       elements.imagePanels.addEventListener('scroll', handleScroll);
     }
 
@@ -575,10 +550,7 @@
           }
           allData = parsed.data.filter(row => Object.values(row).some(val => val));
           allData.forEach(item => {
-            if (item[CONFIG.fields.date]) {
-              item.formattedDate = new Date(item[CONFIG.fields.date]);
-              item.formattedDate.setHours(0, 0, 0, 0);
-            }
+            if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
             
             const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
             imageFields.forEach(field => {
@@ -593,6 +565,7 @@
           loadInitialImages();
           updateLastUpdated();
           showToast("Data loaded successfully");
+          hideLoader();
         },
         error: function(err) {
           console.error(err);
@@ -674,98 +647,45 @@
 
     function applyFilters() {
       showLoader("Applying filters...");
-      
-      // Get filter values
-      const from = elements.filterDateFrom.value;
-      const to = elements.filterDateTo.value;
+      const from = elements.filterDateFrom.valueAsDate;
+      const to = elements.filterDateTo.valueAsDate;
       const issue = elements.filterIssue.value;
-      const enterprise = elements.filterEnterprise.value;
+      const ent = elements.filterEnterprise.value;
       
-      // Apply filters with proper null checks and date handling
       filteredData = allData.filter(row => {
-        // Date filter
-        if (from || to) {
-          if (!row.formattedDate) return false;
-          
-          if (from) {
-            const fromDate = new Date(from);
-            fromDate.setHours(0, 0, 0, 0);
-            if (row.formattedDate < fromDate) return false;
-          }
-          
-          if (to) {
-            const toDate = new Date(to);
-            toDate.setHours(23, 59, 59, 999);
-            if (row.formattedDate > toDate) return false;
-          }
+        if (from && row.formattedDate < from) return false;
+        if (to) {
+          const end = new Date(to);
+          end.setHours(23, 59, 59, 999);
+          if (row.formattedDate > end) return false;
         }
-        
-        // Issue filter
-        if (issue) {
-          const rowIssue = row[CONFIG.fields.issue] || 'Unknown';
-          if (rowIssue !== issue) return false;
-        }
-        
-        // Enterprise filter
-        if (enterprise) {
-          const rowEnterprise = row[CONFIG.fields.enterprise] || 'Unknown';
-          if (rowEnterprise !== enterprise) return false;
-        }
-        
+        if (issue && row[CONFIG.fields.issue] !== issue) return false;
+        if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
         return true;
       });
       
-      // Reset image display
       currentImageIndex = 0;
       uniqueImages.clear();
-      elements.imagePanels.innerHTML = "";
-      
-      // Update UI
       renderDashboard();
       loadInitialImages();
-      updateFilterStatus();
-      
-      showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
       hideLoader();
-    }
-
-    function updateFilterStatus() {
-      const activeFilters = [];
-      
-      if (elements.filterDateFrom.value) {
-        activeFilters.push(`From: ${elements.filterDateFrom.value}`);
-      }
-      if (elements.filterDateTo.value) {
-        activeFilters.push(`To: ${elements.filterDateTo.value}`);
-      }
-      if (elements.filterIssue.value) {
-        activeFilters.push(`Issue: ${elements.filterIssue.value}`);
-      }
-      if (elements.filterEnterprise.value) {
-        activeFilters.push(`Enterprise: ${elements.filterEnterprise.value}`);
-      }
-      
-      elements.filterStatus.textContent = activeFilters.length 
-        ? `Active filters: ${activeFilters.join(', ')}` 
-        : 'No filters active';
+      showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
     }
 
     function resetFilters() {
       showLoader("Resetting filters...");
-      
-      // Reset to last 30 days by default
+      // Reset date filters to default (last 30 days)
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
-      
       elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
       elements.filterDateTo.valueAsDate = today;
       
-      // Reset dropdowns
-      elements.filterIssue.selectedIndex = 0;
-      elements.filterEnterprise.selectedIndex = 0;
+      // Reset dropdown filters
+      elements.filterIssue.value = "";
+      elements.filterEnterprise.value = "";
       
-      // Apply filters and update status
+      // Apply the reset filters
       applyFilters();
     }
 
@@ -798,18 +718,15 @@
     }
 
     function loadInitialImages() {
-      if (filteredData.length === 0) {
-        elements.imagePanels.innerHTML = "<div class='no-images'>No images match your filters</div>";
-        elements.loadMoreBtn.style.display = 'none';
-        return;
-      }
-      
+      elements.imagePanels.innerHTML = "";
+      currentImageIndex = 0;
+      uniqueImages.clear();
       loadMoreImages();
     }
 
     function handleScroll() {
       const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
       
       if (nearBottom && !isLoading && currentImageIndex < filteredData.length) {
         loadMoreImages();
@@ -823,43 +740,33 @@
       }
       
       isLoading = true;
-      elements.loadMoreBtn.style.display = 'none';
-      elements.loadMoreBtn.textContent = "Loading...";
+      elements.loadMoreBtn.style.display = 'none'; // Hide button during auto-load
       
-      // Show loader if this is the first batch
-      if (currentImageIndex === 0) {
-        showLoader("Loading images...");
-      }
-
       // Process next batch
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredData.length);
-      imagesLoading = 0;
       
-      // Create all panels first
-      const fragment = document.createDocumentFragment();
       for (let i = currentImageIndex; i < batchEnd; i++) {
         const item = filteredData[i];
         const imageId = item[CONFIG.fields.imageId];
         
         if (!uniqueImages.has(imageId)) {
-          const panel = createImagePanel(item, true);
-          fragment.appendChild(panel);
+          createImagePanel(item);
           uniqueImages.add(imageId);
-          imagesLoading += 3; // Count each image to load
         }
       }
       
-      elements.imagePanels.appendChild(fragment);
       currentImageIndex = batchEnd;
+      isLoading = false;
       
-      // If no images need loading, complete immediately
-      if (imagesLoading === 0) {
-        completeImageLoading();
-      }
+      // Show button only if there are more unique images remaining
+      const remainingImages = filteredData.slice(currentImageIndex)
+        .filter(item => !uniqueImages.has(item[CONFIG.fields.imageId]));
+      
+      elements.loadMoreBtn.style.display = remainingImages.length > 0 ? 'block' : 'none';
     }
 
-    function createImagePanel(item, trackLoading = false) {
+    function createImagePanel(item) {
       const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
       const row = document.createElement("div");
       row.className = "image-row";
@@ -869,79 +776,24 @@
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${item[rawImage] ? 
-              `<img src="${item[rawImage]}" alt="Raw Image" 
-                onload="imageLoaded()" 
-                onerror="imageLoaded()" 
-                style="opacity:0;transition:opacity 0.3s">` : 
-              '<div class="no-image">No Image Available</div>'}
+            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${item[aiImage] ? 
-              `<img src="${item[aiImage]}" alt="AI Image" 
-                onload="imageLoaded()" 
-                onerror="imageLoaded()" 
-                style="opacity:0;transition:opacity 0.3s">` : 
-              '<div class="no-image">No Image Available</div>'}
+            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${item[manualImage] ? 
-              `<img src="${item[manualImage]}" alt="Manual Image" 
-                onload="imageLoaded()" 
-                onerror="imageLoaded()" 
-                style="opacity:0;transition:opacity 0.3s">` : 
-              '<div class="no-image">No Image Available</div>'}
+            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
       
-      return row;
-    }
-
-    // Global function for image loading callback
-    window.imageLoaded = function() {
-      if (this.complete && this.naturalWidth !== 0) {
-        this.classList.add('loaded');
-      } else {
-        this.style.display = 'none';
-        const container = this.parentElement;
-        const noImageDiv = document.createElement('div');
-        noImageDiv.className = 'no-image';
-        noImageDiv.textContent = 'No Image Available';
-        container.appendChild(noImageDiv);
-      }
-      
-      if (isLoading) {
-        imagesLoading--;
-        if (imagesLoading <= 0) {
-          completeImageLoading();
-        }
-      }
-    };
-
-    function completeImageLoading() {
-      isLoading = false;
-      elements.loadMoreBtn.textContent = "Load More Images";
-      
-      // Show button if there are more images to load
-      const hasMoreImages = currentImageIndex < filteredData.length && 
-        filteredData.slice(currentImageIndex).some(item => 
-          !uniqueImages.has(item[CONFIG.fields.imageId])
-        );
-      
-      elements.loadMoreBtn.style.display = hasMoreImages ? 'block' : 'none';
-      
-      // Hide loader after first batch is loaded
-      if (isInitialLoad) {
-        isInitialLoad = false;
-        hideLoader();
-      }
+      elements.imagePanels.appendChild(row);
     }
   </script>
 </body>
