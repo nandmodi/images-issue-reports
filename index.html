@@ -87,7 +87,6 @@
       border-radius: 4px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
     }
 
     .btn-primary {
@@ -293,105 +292,28 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.9);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.3s ease;
-    }
-
-    #loaderText {
-      margin-top: 15px;
-      font-size: 18px;
-      color: var(--primary-color);
-      text-align: center;
-      max-width: 80%;
-      font-weight: 500;
+      z-index: 1000;
     }
 
     .spinner {
-      width: 70px;
-      height: 70px;
-      border: 8px solid rgba(66, 133, 244, 0.2);
+      width: 50px;
+      height: 50px;
+      border: 5px solid rgba(66, 133, 244, 0.2);
       border-radius: 50%;
       border-top-color: var(--primary-color);
-      animation: spin 1.2s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    .progress-container {
-      width: 80%;
-      max-width: 400px;
-      background-color: var(--medium-gray);
-      border-radius: 20px;
-      margin: 20px 0;
-      height: 24px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary-color), #5b8bf7);
-      width: 0%;
-      transition: width 0.4s ease-out;
-      border-radius: 20px;
-    }
-
-    .progress-text {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      text-align: center;
-      line-height: 24px;
-      color: var(--white);
-      font-size: 13px;
-      font-weight: 500;
-      text-shadow: 0 1px 1px rgba(0,0,0,0.3);
-    }
-
-    .progress-details {
-      font-size: 14px;
-      color: var(--dark-gray);
-      margin-top: 5px;
-      text-align: center;
-      max-width: 80%;
-    }
-
-    #cancelLoad {
-      margin-top: 25px;
-      padding: 8px 25px;
-      font-size: 15px;
-    }
-
-    .error-message {
-      color: var(--danger-color);
-      font-weight: 500;
-      margin-top: 15px;
-      text-align: center;
-      max-width: 80%;
-    }
-
-    .retry-btn {
-      margin-top: 15px;
-      background-color: var(--primary-color);
-      color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
     }
 
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.8; }
-      50% { opacity: 1; }
-      100% { opacity: 0.8; }
     }
 
     #toast {
@@ -540,7 +462,6 @@
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
-        <button id="loadMoreBtn" class="load-more-btn">Load More Images</button>
       </div>
     </div>
 
@@ -551,15 +472,7 @@
 
   <div id="loader">
     <div class="spinner"></div>
-    <div id="loaderText">Preparing dashboard...</div>
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
-      <div class="progress-text" id="progressText">0%</div>
-    </div>
-    <div class="progress-details" id="progressDetails">Starting data sync...</div>
-    <div class="error-message" id="errorMessage" style="display: none;"></div>
-    <button id="retryBtn" class="btn retry-btn" style="display: none;">Retry</button>
-    <button id="cancelLoad" class="btn btn-secondary">Cancel</button>
+    <div id="loaderText">Loading data...</div>
   </div>
   <div id="toast"></div>
 
@@ -602,7 +515,6 @@
       enterprise: null,
       statFilter: null
     };
-    let currentParse = null;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -614,13 +526,7 @@
       filterIssue: document.getElementById("filterIssue"),
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
-      loadMoreBtn: document.getElementById("loadMoreBtn"),
-      cancelLoad: document.getElementById("cancelLoad"),
-      retryBtn: document.getElementById("retryBtn"),
-      progressBar: document.getElementById("progressBar"),
-      progressText: document.getElementById("progressText"),
-      progressDetails: document.getElementById("progressDetails"),
-      errorMessage: document.getElementById("errorMessage")
+      loadMoreBtn: document.getElementById("loadMoreBtn")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
@@ -635,182 +541,44 @@
     function setupEventListeners() {
       elements.imagePanels.addEventListener('scroll', handleScroll);
       elements.loadMoreBtn.addEventListener('click', loadMoreImages);
-      elements.cancelLoad.addEventListener('click', cancelLoading);
-      elements.retryBtn.addEventListener('click', retryLoading);
-    }
-
-    function cancelLoading() {
-      if (currentParse) {
-        try {
-          if (currentParse.abort) {
-            currentParse.abort();
-          }
-        } catch (e) {
-          console.log("Abort error:", e);
-        }
-      }
-      hideLoader();
-      showToast("Data loading cancelled", true);
-    }
-
-    function retryLoading() {
-      elements.errorMessage.style.display = 'none';
-      elements.retryBtn.style.display = 'none';
-      fetchData();
     }
 
     function fetchData() {
-      showLoader("Connecting to data source...");
-      updateProgress(0, "Initializing connection");
-      
-      let loadedBytes = 0;
-      let totalBytes = 0;
-      let startTime = Date.now();
-      
-      try {
-        currentParse = Papa.parse(CONFIG.sheetUrl, {
-          download: true,
-          header: true,
-          skipEmptyLines: true,
-          beforeFirstChunk: function(chunk) {
-            try {
-              const contentLength = chunk.split('\n')[0].match(/Content-Length: (\d+)/i);
-              if (contentLength && contentLength[1]) {
-                totalBytes = parseInt(contentLength[1]);
-                updateProgress(0, `Downloading ${formatBytes(totalBytes)}...`);
-              }
-            } catch (e) {
-              console.log("Content-Length parse error:", e);
+      showLoader("Loading data from spreadsheet...");
+      Papa.parse(CONFIG.sheetUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          allData = results.data.filter(row => 
+            Object.values(row).some(val => val && val.trim() !== '')
+          ).map(item => {
+            if (item[CONFIG.fields.date]) {
+              item.formattedDate = new Date(item[CONFIG.fields.date]);
             }
-            return chunk;
-          },
-          chunk: function(chunk) {
-            loadedBytes += chunk.length;
-            const percent = Math.min(99, Math.round((loadedBytes / (totalBytes || loadedBytes * 1.5)) * 100));
-            
-            // Calculate speed and time remaining if we have totalBytes
-            let details = `Downloading: ${formatBytes(loadedBytes)}`;
-            if (totalBytes > 0) {
-              details += ` of ${formatBytes(totalBytes)}`;
-              const elapsed = (Date.now() - startTime) / 1000;
-              const speed = loadedBytes / elapsed;
-              const remainingBytes = totalBytes - loadedBytes;
-              const remainingTime = remainingBytes / speed;
-              
-              if (speed > 0) {
-                details += ` (${formatBytes(speed)}/sec, ${formatTime(remainingTime)} remaining)`;
-              }
-            }
-            
-            updateProgress(percent, details);
-          },
-          complete: function(results) {
-            if (!results || !results.data) {
-              throw new Error("No data received from server");
-            }
-            
-            updateProgress(100, "Processing data...");
-            setTimeout(() => {
-              try {
-                allData = results.data.filter(row => 
-                  Object.values(row).some(val => val && val.trim() !== '')
-                ).map(item => {
-                  if (item[CONFIG.fields.date]) {
-                    item.formattedDate = new Date(item[CONFIG.fields.date]);
-                  }
-                  return item;
-                });
-                
-                filteredData = [...allData];
-                renderDashboard();
-                populateFilters();
-                loadInitialImages();
-                updateLastUpdated();
-                showToast("Data synchronized successfully");
-                setTimeout(hideLoader, 500);
-              } catch (e) {
-                console.error("Processing error:", e);
-                showError("Error processing data: " + e.message);
-              }
-            }, 300);
-          },
-          error: function(err) {
-            console.error("Download error:", err);
-            showError("Error loading data: " + (err.message || "Connection failed"));
-          }
-        });
-      } catch (e) {
-        console.error("Parse initialization error:", e);
-        showError("Failed to start data download: " + e.message);
-      }
-    }
-
-    function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    function formatTime(seconds) {
-      if (seconds < 60) return Math.round(seconds) + ' sec';
-      const minutes = Math.floor(seconds / 60);
-      const remainingSec = Math.round(seconds % 60);
-      return `${minutes}m ${remainingSec}s`;
-    }
-
-    function updateProgress(percent, details = "") {
-      elements.progressBar.style.width = percent + '%';
-      elements.progressText.textContent = percent + '%';
-      elements.loaderText.textContent = 
-        percent < 100 ? `Syncing data... (${percent}%)` : "Finalizing...";
-      
-      if (details) {
-        elements.progressDetails.textContent = details;
-      }
-      
-      // Pulse animation when processing
-      if (percent === 100) {
-        elements.progressBar.style.animation = "pulse 1.5s infinite";
-      } else {
-        elements.progressBar.style.animation = "none";
-      }
-    }
-
-    function showError(message) {
-      elements.errorMessage.textContent = message;
-      elements.errorMessage.style.display = 'block';
-      elements.retryBtn.style.display = 'inline-block';
-      elements.cancelLoad.style.display = 'none';
-      elements.loaderText.textContent = "Error occurred";
-      elements.progressBar.style.backgroundColor = 'var(--danger-color)';
-    }
-
-    function showLoader(message) {
-      elements.loaderText.textContent = message;
-      elements.loader.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-      updateProgress(0);
-      elements.errorMessage.style.display = 'none';
-      elements.retryBtn.style.display = 'none';
-      elements.cancelLoad.style.display = 'inline-block';
-      elements.progressBar.style.backgroundColor = '';
-      elements.progressBar.style.backgroundImage = 'linear-gradient(90deg, var(--primary-color), #5b8bf7)';
-    }
-
-    function hideLoader() {
-      elements.loader.style.opacity = '0';
-      setTimeout(() => {
-        elements.loader.style.display = 'none';
-        elements.loader.style.opacity = '1';
-        document.body.style.overflow = '';
-      }, 300);
+            return item;
+          });
+          
+          filteredData = [...allData];
+          renderDashboard();
+          populateFilters();
+          loadInitialImages();
+          updateLastUpdated();
+          showToast("Data loaded successfully");
+          hideLoader();
+        },
+        error: function(err) {
+          console.error(err);
+          showToast("Error loading data", true);
+          hideLoader();
+        }
+      });
     }
 
     function applyFilters() {
       showLoader("Applying filters...");
       
+      // Update current filters from UI
       currentFilters = {
         dateFrom: elements.filterDateFrom.valueAsDate,
         dateTo: elements.filterDateTo.valueAsDate,
@@ -820,6 +588,7 @@
       };
 
       filteredData = allData.filter(row => {
+        // Date filtering
         if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
           return false;
         }
@@ -831,6 +600,7 @@
           }
         }
 
+        // Dropdown filters
         if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
           return false;
         }
@@ -838,6 +608,7 @@
           return false;
         }
 
+        // Stat table filter
         if (currentFilters.statFilter) {
           const field = currentFilters.statFilter.field;
           const value = currentFilters.statFilter.value;
@@ -870,17 +641,21 @@
 
     function resetFilters() {
       showLoader("Resetting filters...");
+      // Reset date filters to default (last 30 days)
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
       elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
       elements.filterDateTo.valueAsDate = today;
       
+      // Reset dropdown filters
       elements.filterIssue.value = "";
       elements.filterEnterprise.value = "";
       
+      // Clear stat filter
       currentFilters.statFilter = null;
       
+      // Apply the reset filters
       applyFilters();
     }
 
@@ -999,19 +774,19 @@
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
@@ -1025,6 +800,15 @@
         fetchData();
         setupAutoRefresh();
       }, CONFIG.refreshInterval);
+    }
+
+    function showLoader(message) {
+      elements.loaderText.textContent = message;
+      elements.loader.style.display = 'flex';
+    }
+
+    function hideLoader() {
+      elements.loader.style.display = 'none';
     }
 
     function showToast(msg, isError = false) {
