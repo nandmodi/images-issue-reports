@@ -87,6 +87,7 @@
       border-radius: 4px;
       font-weight: 500;
       cursor: pointer;
+      transition: all 0.2s;
     }
 
     .btn-primary {
@@ -152,65 +153,28 @@
       font-size: 13px;
     }
 
-    /* Restored original Issue section style */
-    .percentage-card-body#issueStats {
-      display: block;
-      overflow-y: auto;
-      max-height: 300px;
-    }
-
-    .percentage-card-body#issueStats table {
+    .percentage-card-body table {
       width: 100%;
       border-collapse: collapse;
-      table-layout: fixed;
     }
 
-    .percentage-card-body#issueStats thead {
+    .percentage-card-body thead {
       position: sticky;
       top: 0;
       background-color: var(--white);
       z-index: 1;
     }
 
-    .percentage-card-body#issueStats tbody {
+    .percentage-card-body tbody {
       display: block;
+      max-height: 300px;
       overflow-y: auto;
     }
 
-    .percentage-card-body#issueStats tr {
+    .percentage-card-body tr {
       display: table;
       width: 100%;
       table-layout: fixed;
-    }
-
-    /* Keep modified Sub Issue section style */
-    .percentage-card-body#subIssueStats {
-      display: flex;
-      flex-direction: column;
-      height: calc(100% - 38px);
-    }
-    
-    .percentage-card-body#subIssueStats table {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 600px;
-      table-layout: auto !important;
-    }
-    
-    .percentage-card-body#subIssueStats thead {
-      flex: 0 0 auto;
-    }
-    
-    .percentage-card-body#subIssueStats tbody {
-      flex: 1;
-      overflow-y: auto;
-      max-height: 600px !important;
-    }
-
-    .percentage-card-body table {
-      width: 100%;
-      border-collapse: collapse;
     }
 
     .percentage-card-body th,
@@ -329,18 +293,27 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.95);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+
+    #loaderText {
+      margin-top: 15px;
+      font-size: 18px;
+      color: var(--primary-color);
+      text-align: center;
+      max-width: 80%;
     }
 
     .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(66, 133, 244, 0.2);
+      width: 60px;
+      height: 60px;
+      border: 6px solid rgba(66, 133, 244, 0.2);
       border-radius: 50%;
       border-top-color: var(--primary-color);
       animation: spin 1s ease-in-out infinite;
@@ -399,73 +372,13 @@
       }
     }
 
-    /* Data sync loader styles */
-    #data-sync-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
+    .percentage-card-body#subIssueStats {
+      overflow-x: auto;
     }
-    
-    .sync-spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(66, 133, 244, 0.2);
-      border-radius: 50%;
-      border-top-color: var(--primary-color);
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 15px;
-    }
-    
-    .sync-progress-container {
-      width: 80%;
-      max-width: 400px;
-      margin-top: 20px;
-    }
-    
-    .sync-progress-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 5px;
-      font-size: 14px;
-      color: var(--dark-gray);
-    }
-    
-    .sync-progress {
-      width: 100%;
-      height: 8px;
-      background-color: var(--medium-gray);
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    
-    .sync-progress-bar {
-      height: 100%;
-      background-color: var(--primary-color);
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-    
-    .sync-status {
-      margin-top: 15px;
-      font-size: 14px;
-      color: var(--dark-gray);
-      text-align: center;
-      min-height: 20px;
-    }
-    
-    .sync-stats {
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--dark-gray);
-      text-align: center;
+
+    .percentage-card-body#subIssueStats table {
+      min-width: 600px;
+      table-layout: auto !important;
     }
     
     .load-more {
@@ -559,6 +472,7 @@
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
+        <button id="loadMoreBtn" class="load-more-btn">Load More Images</button>
       </div>
     </div>
 
@@ -570,25 +484,8 @@
   <div id="loader">
     <div class="spinner"></div>
     <div id="loaderText">Loading data...</div>
+    <button id="cancelLoad" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
   </div>
-  
-  <!-- Data sync loader -->
-  <div id="data-sync-loader" style="display: none;">
-    <div class="sync-spinner"></div>
-    <h3>Syncing Data...</h3>
-    <div class="sync-progress-container">
-      <div class="sync-progress-info">
-        <span id="sync-percentage">0%</span>
-        <span id="sync-speed">0 KB/s</span>
-      </div>
-      <div class="sync-progress">
-        <div class="sync-progress-bar" id="sync-progress-bar"></div>
-      </div>
-    </div>
-    <div class="sync-status" id="sync-status">Connecting to server...</div>
-    <div class="sync-stats" id="sync-stats">0 KB of 0 KB transferred</div>
-  </div>
-  
   <div id="toast"></div>
 
   <script>
@@ -630,6 +527,7 @@
       enterprise: null,
       statFilter: null
     };
+    let currentParse = null;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -642,109 +540,51 @@
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
       loadMoreBtn: document.getElementById("loadMoreBtn"),
-      dataSyncLoader: document.getElementById("data-sync-loader"),
-      syncProgressBar: document.getElementById("sync-progress-bar")
+      cancelLoad: document.getElementById("cancelLoad")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
       showLoader("Initializing dashboard...");
-      showDataSyncLoader();
-      startDataSync();
-    }
-
-    function startDataSync() {
-      updateSyncStatus("Starting data synchronization...");
-      
-      // Simulate actual data transfer with progress updates
-      let totalSize = 1024 * 1024 * 5; // 5MB for example
-      let transferred = 0;
-      let lastUpdateTime = Date.now();
-      let lastTransferred = 0;
-      
-      updateSyncStats(transferred, totalSize);
-      
-      // Simulate chunks of data being transferred
-      const syncInterval = setInterval(() => {
-        // Simulate transferring 50KB chunks
-        const chunkSize = 50 * 1024;
-        transferred += chunkSize;
-        
-        // Calculate transfer speed
-        const now = Date.now();
-        const timeDiff = (now - lastUpdateTime) / 1000; // in seconds
-        const transferredDiff = transferred - lastTransferred;
-        const speed = (transferredDiff / 1024 / timeDiff).toFixed(1);
-        
-        // Update progress
-        const progress = Math.min(100, (transferred / totalSize * 100));
-        updateSyncProgress(progress, speed);
-        updateSyncStats(transferred, totalSize);
-        
-        // Update status messages at different stages
-        if (progress < 20) {
-          updateSyncStatus("Downloading metadata...");
-        } else if (progress < 60) {
-          updateSyncStatus("Transferring image data...");
-        } else if (progress < 90) {
-          updateSyncStatus("Processing records...");
-        } else {
-          updateSyncStatus("Finalizing synchronization...");
-        }
-        
-        // Store current values for next speed calculation
-        lastUpdateTime = now;
-        lastTransferred = transferred;
-        
-        // Complete when we reach 100%
-        if (progress >= 100) {
-          clearInterval(syncInterval);
-          updateSyncStatus("Synchronization complete!");
-          setTimeout(() => {
-            hideDataSyncLoader();
-            fetchData(); // Now fetch the actual data
-          }, 500);
-        }
-      }, 200); // Update every 200ms
-    }
-    
-    function updateSyncProgress(percent, speed) {
-      elements.syncProgressBar.style.width = `${percent}%`;
-      document.getElementById('sync-percentage').textContent = `${Math.floor(percent)}%`;
-      document.getElementById('sync-speed').textContent = `${speed} KB/s`;
-    }
-    
-    function updateSyncStatus(message) {
-      document.getElementById('sync-status').textContent = message;
-    }
-    
-    function updateSyncStats(transferred, total) {
-      const transferredKB = (transferred / 1024).toFixed(1);
-      const totalKB = (total / 1024).toFixed(1);
-      document.getElementById('sync-stats').textContent = 
-        `${transferredKB} KB of ${totalKB} KB transferred`;
-    }
-
-    function showDataSyncLoader() {
-      elements.dataSyncLoader.style.display = 'flex';
-    }
-
-    function hideDataSyncLoader() {
-      elements.dataSyncLoader.style.display = 'none';
+      fetchData();
+      setupEventListeners();
+      resetFilters();
     }
 
     function setupEventListeners() {
       elements.imagePanels.addEventListener('scroll', handleScroll);
+      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
+      elements.cancelLoad.addEventListener('click', cancelLoading);
+    }
+
+    function cancelLoading() {
+      if (currentParse) {
+        // Attempt to abort the parsing if possible
+        if (currentParse.abort) {
+          currentParse.abort();
+        }
+      }
+      hideLoader();
+      showToast("Data loading cancelled", true);
     }
 
     function fetchData() {
       showLoader("Loading data from spreadsheet...");
-      Papa.parse(CONFIG.sheetUrl, {
+      
+      // Show a progress message after 3 seconds if still loading
+      const progressTimer = setTimeout(() => {
+        if (elements.loader.style.display === 'flex') {
+          elements.loaderText.textContent = "Still loading... This might take a while for large datasets";
+        }
+      }, 3000);
+      
+      currentParse = Papa.parse(CONFIG.sheetUrl, {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
+          clearTimeout(progressTimer);
           allData = results.data.filter(row => 
             Object.values(row).some(val => val && val.trim() !== '')
           ).map(item => {
@@ -763,11 +603,30 @@
           hideLoader();
         },
         error: function(err) {
+          clearTimeout(progressTimer);
           console.error(err);
           showToast("Error loading data", true);
           hideLoader();
         }
       });
+    }
+
+    function showLoader(message) {
+      elements.loaderText.textContent = message;
+      elements.loader.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function hideLoader() {
+      // Add a small delay to prevent flickering if loading was very fast
+      setTimeout(() => {
+        elements.loader.style.opacity = '0';
+        setTimeout(() => {
+          elements.loader.style.display = 'none';
+          elements.loader.style.opacity = '1';
+          document.body.style.overflow = '';
+        }, 300);
+      }, 200);
     }
 
     function applyFilters() {
@@ -936,10 +795,12 @@
 
     function loadMoreImages() {
       if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
+        elements.loadMoreBtn.style.display = 'none';
         return;
       }
       
       isLoading = true;
+      elements.loadMoreBtn.style.display = 'none';
       
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
@@ -951,6 +812,10 @@
       
       currentImageIndex = batchEnd;
       isLoading = false;
+      
+      if (currentImageIndex < filteredUniqueImages.length) {
+        elements.loadMoreBtn.style.display = 'block';
+      }
     }
 
     function createImagePanel(item) {
@@ -963,19 +828,19 @@
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
+            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
+            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
+            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
@@ -989,15 +854,6 @@
         fetchData();
         setupAutoRefresh();
       }, CONFIG.refreshInterval);
-    }
-
-    function showLoader(message) {
-      elements.loaderText.textContent = message;
-      elements.loader.style.display = 'flex';
-    }
-
-    function hideLoader() {
-      elements.loader.style.display = 'none';
     }
 
     function showToast(msg, isError = false) {
