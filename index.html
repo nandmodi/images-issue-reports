@@ -777,24 +777,29 @@
       const row = document.createElement("div");
       row.className = "image-row";
       
+      // Ensure image URLs are properly constructed
+      const rawImgUrl = item[rawImage] ? `${CONFIG.imageUrlPrefix}${item[rawImage]}` : '';
+      const aiImgUrl = item[aiImage] ? `${CONFIG.imageUrlPrefix}${item[aiImage]}` : '';
+      const manualImgUrl = item[manualImage] ? `${CONFIG.imageUrlPrefix}${item[manualImage]}` : '';
+      
       row.innerHTML = `
         <div class="image-panel">
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${rawImgUrl ? `<img src="${rawImgUrl}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${aiImgUrl ? `<img src="${aiImgUrl}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${manualImgUrl ? `<img src="${manualImgUrl}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
