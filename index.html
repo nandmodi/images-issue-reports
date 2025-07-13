@@ -231,7 +231,7 @@
     .image-panels {
       display: block;
       padding-bottom: 10px;
-      max-height: calc(100vh - 500px);
+      max-height: calc(100vh - 0px);
       overflow-y: auto;
     }
 
@@ -284,6 +284,12 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .image-container img.loaded {
+      opacity: 1;
     }
 
     #loader {
@@ -343,6 +349,23 @@
       font-size: 14px;
     }
 
+    .filter-status {
+      margin: 10px 0;
+      padding: 8px 15px;
+      background-color: var(--light-gray);
+      border-radius: 4px;
+      font-size: 14px;
+      color: var(--dark-gray);
+      font-style: italic;
+    }
+
+    .no-images {
+      text-align: center;
+      padding: 20px;
+      color: var(--dark-gray);
+      font-style: italic;
+    }
+
     @media (max-width: 768px) {
       .filter-section,
       .percentage-section {
@@ -397,16 +420,6 @@
     }
     
     .no-image {
-      color: var(--dark-gray);
-      font-style: italic;
-    }
-
-    .filter-status {
-      margin: 10px 0;
-      padding: 8px 15px;
-      background-color: var(--light-gray);
-      border-radius: 4px;
-      font-size: 14px;
       color: var(--dark-gray);
       font-style: italic;
     }
@@ -474,7 +487,6 @@
       <div class="image-section-header">Image Section (Showing Unique Images Only)</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
-        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More Images</button>
       </div>
     </div>
 
@@ -519,6 +531,7 @@
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
     let uniqueImages = new Set();
     let isLoading = false;
+    let isInitialLoad = true;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -560,7 +573,10 @@
           }
           allData = parsed.data.filter(row => Object.values(row).some(val => val));
           allData.forEach(item => {
-            if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
+            if (item[CONFIG.fields.date]) {
+              item.formattedDate = new Date(item[CONFIG.fields.date]);
+              item.formattedDate.setHours(0, 0, 0, 0);
+            }
             
             const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
             imageFields.forEach(field => {
@@ -575,7 +591,6 @@
           loadInitialImages();
           updateLastUpdated();
           showToast("Data loaded successfully");
-          hideLoader();
         },
         error: function(err) {
           console.error(err);
@@ -659,40 +674,37 @@
       showLoader("Applying filters...");
       
       // Get filter values
-      const from = elements.filterDateFrom.valueAsDate;
-      const to = elements.filterDateTo.valueAsDate;
+      const from = elements.filterDateFrom.value;
+      const to = elements.filterDateTo.value;
       const issue = elements.filterIssue.value;
       const enterprise = elements.filterEnterprise.value;
       
       // Apply filters with proper null checks and date handling
       filteredData = allData.filter(row => {
-        // Date filter - handle timezones properly
+        // Date filter
         if (from || to) {
           if (!row.formattedDate) return false;
-          
-          const rowDate = new Date(row.formattedDate);
-          rowDate.setHours(0, 0, 0, 0);
           
           if (from) {
             const fromDate = new Date(from);
             fromDate.setHours(0, 0, 0, 0);
-            if (rowDate < fromDate) return false;
+            if (row.formattedDate < fromDate) return false;
           }
           
           if (to) {
             const toDate = new Date(to);
             toDate.setHours(23, 59, 59, 999);
-            if (rowDate > toDate) return false;
+            if (row.formattedDate > toDate) return false;
           }
         }
         
-        // Issue filter - handle empty/unknown values
+        // Issue filter
         if (issue) {
           const rowIssue = row[CONFIG.fields.issue] || 'Unknown';
           if (rowIssue !== issue) return false;
         }
         
-        // Enterprise filter - handle empty/unknown values
+        // Enterprise filter
         if (enterprise) {
           const rowEnterprise = row[CONFIG.fields.enterprise] || 'Unknown';
           if (rowEnterprise !== enterprise) return false;
@@ -701,17 +713,18 @@
         return true;
       });
       
-      // Reset display
+      // Reset image display
       currentImageIndex = 0;
       uniqueImages.clear();
+      elements.imagePanels.innerHTML = "";
       
       // Update UI
       renderDashboard();
       loadInitialImages();
       updateFilterStatus();
-      hideLoader();
       
       showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
+      hideLoader();
     }
 
     function updateFilterStatus() {
@@ -752,7 +765,6 @@
       
       // Apply filters and update status
       applyFilters();
-      updateFilterStatus();
     }
 
     function setupAutoRefresh() {
@@ -784,9 +796,12 @@
     }
 
     function loadInitialImages() {
-      elements.imagePanels.innerHTML = "";
-      currentImageIndex = 0;
-      uniqueImages.clear();
+      if (filteredData.length === 0) {
+        elements.imagePanels.innerHTML = "<div class='no-images'>No images match your filters</div>";
+        elements.loadMoreBtn.style.display = 'none';
+        return;
+      }
+      
       loadMoreImages();
     }
 
@@ -807,29 +822,38 @@
       
       isLoading = true;
       elements.loadMoreBtn.style.display = 'none';
+      elements.loadMoreBtn.textContent = "Loading...";
       
       // Process next batch
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredData.length);
+      let loadedCount = 0;
       
-      for (let i = currentImageIndex; i < batchEnd; i++) {
-        const item = filteredData[i];
-        const imageId = item[CONFIG.fields.imageId];
-        
-        if (!uniqueImages.has(imageId)) {
-          createImagePanel(item);
-          uniqueImages.add(imageId);
+      // Use setTimeout to allow UI to update
+      setTimeout(() => {
+        for (let i = currentImageIndex; i < batchEnd; i++) {
+          const item = filteredData[i];
+          const imageId = item[CONFIG.fields.imageId];
+          
+          if (!uniqueImages.has(imageId)) {
+            createImagePanel(item);
+            uniqueImages.add(imageId);
+            loadedCount++;
+          }
         }
-      }
-      
-      currentImageIndex = batchEnd;
-      isLoading = false;
-      
-      // Show button only if there are more unique images remaining
-      const remainingImages = filteredData.slice(currentImageIndex)
-        .filter(item => !uniqueImages.has(item[CONFIG.fields.imageId]));
-      
-      elements.loadMoreBtn.style.display = remainingImages.length > 0 ? 'block' : 'none';
+        
+        currentImageIndex = batchEnd;
+        isLoading = false;
+        elements.loadMoreBtn.textContent = "Load More Images";
+        
+        // Show button if there are more images to load
+        const hasMoreImages = currentImageIndex < filteredData.length && 
+          filteredData.slice(currentImageIndex).some(item => 
+            !uniqueImages.has(item[CONFIG.fields.imageId])
+          );
+        
+        elements.loadMoreBtn.style.display = hasMoreImages ? 'block' : 'none';
+      }, 100);
     }
 
     function createImagePanel(item) {
@@ -842,19 +866,34 @@
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[rawImage] ? 
+              `<img src="${item[rawImage]}" alt="Raw Image" 
+                onload="this.classList.add('loaded')" 
+                onerror="this.style.display='none'" 
+                style="opacity:0;transition:opacity 0.3s">` : 
+              '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[aiImage] ? 
+              `<img src="${item[aiImage]}" alt="AI Image" 
+                onload="this.classList.add('loaded')" 
+                onerror="this.style.display='none'" 
+                style="opacity:0;transition:opacity 0.3s">` : 
+              '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[manualImage] ? 
+              `<img src="${item[manualImage]}" alt="Manual Image" 
+                onload="this.classList.add('loaded')" 
+                onerror="this.style.display='none'" 
+                style="opacity:0;transition:opacity 0.3s">` : 
+              '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
