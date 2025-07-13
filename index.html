@@ -293,12 +293,11 @@
       width: 100%;
       height: 100%;
       background: rgba(255, 255, 255, 0.9);
-      display: flex;
+      display: none;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      display: none;
     }
 
     .spinner {
@@ -472,7 +471,10 @@
     </div>
   </div>
 
-  <div id="loader"><div class="spinner"></div><div id="loaderText">Loading data...</div></div>
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loaderText">Loading data...</div>
+  </div>
   <div id="toast"></div>
 
   <script>
@@ -524,10 +526,11 @@
       showLoader("Loading dashboard...");
       fetchData();
       setupAutoRefresh();
-      resetFilters(); // Initialize with default filters
+      resetFilters();
     }
 
     function fetchData() {
+      showLoader("Loading data...");
       $.ajax({
         url: CONFIG.sheetUrl,
         type: 'GET',
@@ -537,6 +540,7 @@
           if (parsed.errors.length) {
             console.error(parsed.errors);
             showToast("Error parsing data", true);
+            hideLoader();
             return;
           }
           allData = parsed.data.filter(row => Object.values(row).some(val => val));
@@ -664,6 +668,7 @@
     }
 
     function resetFilters() {
+      showLoader("Resetting filters...");
       // Reset date filters to default (last 30 days)
       const today = new Date();
       const thirtyDaysAgo = new Date();
