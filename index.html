@@ -9,7 +9,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    /* Your existing CSS remains unchanged */
     :root {
       --primary-color: #4285f4;
       --secondary-color: #34a853;
@@ -88,6 +87,7 @@
       border-radius: 4px;
       font-weight: 500;
       cursor: pointer;
+      transition: all 0.2s;
     }
 
     .btn-primary {
@@ -293,28 +293,111 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.9);
-      display: none;
+      background: rgba(255, 255, 255, 0.96);
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+    }
+
+    #loaderText {
+      margin-top: 15px;
+      font-size: 18px;
+      color: var(--primary-color);
+      text-align: center;
+      max-width: 80%;
+      font-weight: 500;
     }
 
     .spinner {
-      width: 50px;
-      height: 50px;
-      border: 5px solid rgba(66, 133, 244, 0.2);
+      width: 70px;
+      height: 70px;
+      border: 8px solid rgba(66, 133, 244, 0.2);
       border-radius: 50%;
       border-top-color: var(--primary-color);
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 15px;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    .progress-container {
+      width: 80%;
+      max-width: 400px;
+      background-color: var(--medium-gray);
+      border-radius: 20px;
+      margin: 20px 0;
+      height: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), #5b8bf7);
+      width: 0%;
+      transition: width 0.4s ease-out;
+      border-radius: 20px;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      line-height: 24px;
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 500;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    }
+
+    .progress-details {
+      font-size: 14px;
+      color: var(--dark-gray);
+      margin-top: 5px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    #cancelLoad {
+      margin-top: 25px;
+      padding: 8px 25px;
+      font-size: 15px;
+    }
+
+    .error-message {
+      color: var(--danger-color);
+      font-weight: 500;
+      margin-top: 15px;
+      text-align: center;
+      max-width: 80%;
+      display: none;
+    }
+
+    .retry-btn {
+      background-color: var(--primary-color);
+      color: white;
+      margin-top: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
     }
 
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
     }
 
     #toast {
@@ -433,37 +516,37 @@
     <div class="percentage-section">
       <div class="percentage-column">
         <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Image Type</div>
+          <div class="percentage-card-header">Image Type</div>
           <div class="percentage-card-body" id="imageTypeStats"></div>
         </div>
         <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Issue Wise</div>
+          <div class="percentage-card-header">Issue Wise</div>
           <div class="percentage-card-body" id="issueStats"></div>
         </div>
       </div>
       <div class="percentage-column">
         <div class="percentage-card">
-          <div class="percentage-card-header">Issue % AI Tag</div>
+          <div class="percentage-card-header">AI Tag</div>
           <div class="percentage-card-body" id="aiTagStats"></div>
         </div>
         <div class="percentage-card">
-          <div class="percentage-card-header">Issue % Enterprise</div>
+          <div class="percentage-card-header">Enterprise</div>
           <div class="percentage-card-body" id="enterpriseStats"></div>
         </div>
       </div>
       <div class="percentage-column">
         <div class="percentage-card full-height">
-          <div class="percentage-card-header">Issue % Sub Issue Wise</div>
+          <div class="percentage-card-header">Sub Issue </div>
           <div class="percentage-card-body" id="subIssueStats"></div>
         </div>
       </div>
     </div>
 
     <div class="image-section">
-      <div class="image-section-header">Image Section (Showing Unique Images Only)</div>
+      <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
-        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More Images</button>
+        <button id="loadMoreBtn" class="load-more-btn">Load More Images</button>
       </div>
     </div>
 
@@ -474,14 +557,24 @@
 
   <div id="loader">
     <div class="spinner"></div>
-    <div id="loaderText">Loading data...</div>
+    <div id="loaderText">Preparing dashboard...</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+    <div class="progress-details" id="progressDetails">Starting data sync...</div>
+    <div class="error-message" id="errorMessage"></div>
+    <button id="retryBtn" class="retry-btn">Retry</button>
+    <button id="cancelLoad" class="btn btn-secondary">Cancel</button>
   </div>
   <div id="toast"></div>
 
   <script>
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 86400000, // 24 hours in milliseconds
+      refreshInterval: 86400000,
+      maxRetries: 3,
+      retryDelay: 2000,
       fields: {
         date: "createdDate",
         imageType: "image_category",
@@ -501,13 +594,23 @@
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
       ],
-      imagesPerBatch: 10, // Changed to 10 images per batch
-      imageUrlPrefix: "https://media.spyneai.com/unsafe/0x0/filters:format(webp)/"
+      imagesPerBatch: 10
     };
 
-    let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
-    let uniqueImages = new Set();
+    let allData = [];
+    let filteredData = [];
+    let currentImageIndex = 0;
+    let refreshTimer = null;
+    let filteredUniqueImages = [];
     let isLoading = false;
+    let currentFilters = {
+      dateFrom: null,
+      dateTo: null,
+      issue: null,
+      enterprise: null,
+      statFilter: null
+    };
+    let currentParse = null;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -519,60 +622,247 @@
       filterIssue: document.getElementById("filterIssue"),
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
-      loadMoreBtn: document.getElementById("loadMoreBtn")
+      loadMoreBtn: document.getElementById("loadMoreBtn"),
+      cancelLoad: document.getElementById("cancelLoad"),
+      retryBtn: document.getElementById("retryBtn"),
+      progressBar: document.getElementById("progressBar"),
+      progressText: document.getElementById("progressText"),
+      progressDetails: document.getElementById("progressDetails"),
+      errorMessage: document.getElementById("errorMessage")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
-      showLoader("Loading dashboard...");
+      showLoader("Initializing dashboard...");
       fetchData();
-      setupAutoRefresh();
+      setupEventListeners();
       resetFilters();
-      
-      // Initialize infinite scroll
-      elements.imagePanels.addEventListener('scroll', handleScroll);
     }
 
-    function fetchData() {
-      showLoader("Loading data...");
-      $.ajax({
-        url: CONFIG.sheetUrl,
-        type: 'GET',
-        dataType: 'text',
-        success: function(response) {
-          const parsed = Papa.parse(response, { header: true, skipEmptyLines: true, transform: value => value ? value.trim() : '' });
-          if (parsed.errors.length) {
-            console.error(parsed.errors);
-            showToast("Error parsing data", true);
-            hideLoader();
-            return;
-          }
-          allData = parsed.data.filter(row => Object.values(row).some(val => val));
-          allData.forEach(item => {
-            if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
-            
-            const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
-            imageFields.forEach(field => {
-              if (item[field] && item[field].startsWith(CONFIG.imageUrlPrefix)) {
-                item[field] = item[field].substring(CONFIG.imageUrlPrefix.length);
+    function setupEventListeners() {
+      elements.imagePanels.addEventListener('scroll', handleScroll);
+      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
+      elements.cancelLoad.addEventListener('click', cancelLoading);
+      elements.retryBtn.addEventListener('click', () => {
+        elements.errorMessage.style.display = 'none';
+        elements.retryBtn.style.display = 'none';
+        fetchData();
+      });
+    }
+
+    function fetchData(retryCount = 0) {
+      showLoader(retryCount > 0 ? `Loading data (attempt ${retryCount + 1})` : "Loading data...");
+
+      // Temporary console error suppression for known non-critical errors
+      const originalError = console.error;
+      console.error = function(...args) {
+        if (typeof args[0] === 'string' && 
+            (args[0].includes('QUIC_PROTOCOL_ERROR') || 
+             args[0].includes('Receiving end does not exist'))) {
+          return;
+        }
+        originalError.apply(console, args);
+      };
+
+      try {
+        currentParse = Papa.parse(CONFIG.sheetUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          beforeFirstChunk: function(chunk) {
+            try {
+              const contentLength = chunk.split('\n')[0].match(/Content-Length: (\d+)/i);
+              if (contentLength && contentLength[1]) {
+                const totalBytes = parseInt(contentLength[1]);
+                updateProgress(0, `Downloading ${formatBytes(totalBytes)}...`);
               }
+            } catch (e) {
+              console.log("Content-Length parse error:", e);
+            }
+            return chunk;
+          },
+          chunk: function(chunk) {
+            // Progress updates handled here if needed
+          },
+          complete: function(results) {
+            console.error = originalError; // Restore original console.error
+            
+            if (!results?.data?.length) {
+              if (retryCount < CONFIG.maxRetries) {
+                return setTimeout(() => fetchData(retryCount + 1), CONFIG.retryDelay * (retryCount + 1));
+              }
+              throw new Error("No valid data received");
+            }
+
+            // Original processing logic
+            allData = results.data.filter(row => 
+              Object.values(row).some(val => val && val.trim() !== '')
+            ).map(item => {
+              if (item[CONFIG.fields.date]) {
+                item.formattedDate = new Date(item[CONFIG.fields.date]);
+              }
+              return item;
             });
-          });
-          filteredData = [...allData];
-          renderDashboard();
-          populateFilters();
-          loadInitialImages();
-          updateLastUpdated();
-          showToast("Data loaded successfully");
-          hideLoader();
-        },
-        error: function(err) {
-          console.error(err);
-          showToast("Error loading data", true);
-          hideLoader();
+            
+            filteredData = [...allData];
+            renderDashboard();
+            populateFilters();
+            loadInitialImages();
+            updateLastUpdated();
+            showToast("Data loaded successfully");
+            hideLoader();
+          },
+          error: function(err) {
+            console.error = originalError;
+            if (retryCount < CONFIG.maxRetries) {
+              showToast(`Retrying... (${retryCount + 1}/${CONFIG.maxRetries})`);
+              return setTimeout(() => fetchData(retryCount + 1), CONFIG.retryDelay * (retryCount + 1));
+            }
+            showError(formatError(err));
+            hideLoader();
+          }
+        });
+      } catch (e) {
+        console.error = originalError;
+        if (retryCount < CONFIG.maxRetries) {
+          return setTimeout(() => fetchData(retryCount + 1), CONFIG.retryDelay * (retryCount + 1));
+        }
+        showError(formatError(e));
+        hideLoader();
+      }
+    }
+
+    function formatError(err) {
+      const message = err?.message || String(err);
+      if (message.includes('QUIC_PROTOCOL')) {
+        return "Temporary network issue - please try again later";
+      }
+      if (message.includes('Receiving end does not exist')) {
+        return "Connection issue - refreshing may help";
+      }
+      return `Data loading failed: ${message.split('\n')[0]}`;
+    }
+
+    function showError(message) {
+      elements.errorMessage.textContent = message;
+      elements.errorMessage.style.display = 'block';
+      elements.retryBtn.style.display = 'block';
+    }
+
+    function showLoader(message) {
+      elements.loaderText.textContent = message;
+      elements.loader.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      elements.errorMessage.style.display = 'none';
+      elements.retryBtn.style.display = 'none';
+    }
+
+    function hideLoader() {
+      elements.loader.style.opacity = '0';
+      setTimeout(() => {
+        elements.loader.style.display = 'none';
+        elements.loader.style.opacity = '1';
+        document.body.style.overflow = '';
+      }, 300);
+    }
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function cancelLoading() {
+      if (currentParse) {
+        try {
+          if (currentParse.abort) {
+            currentParse.abort();
+          }
+        } catch (e) {
+          console.log("Abort error:", e);
+        }
+      }
+      hideLoader();
+      showToast("Data loading cancelled", true);
+    }
+
+    function applyFilters() {
+      showLoader("Applying filters...");
+      
+      currentFilters = {
+        dateFrom: elements.filterDateFrom.valueAsDate,
+        dateTo: elements.filterDateTo.valueAsDate,
+        issue: elements.filterIssue.value || null,
+        enterprise: elements.filterEnterprise.value || null,
+        statFilter: currentFilters.statFilter
+      };
+
+      filteredData = allData.filter(row => {
+        if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
+          return false;
+        }
+        if (currentFilters.dateTo) {
+          const end = new Date(currentFilters.dateTo);
+          end.setHours(23, 59, 59, 999);
+          if (!row.formattedDate || row.formattedDate > end) {
+            return false;
+          }
+        }
+
+        if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
+          return false;
+        }
+        if (currentFilters.enterprise && row[CONFIG.fields.enterprise] !== currentFilters.enterprise) {
+          return false;
+        }
+
+        if (currentFilters.statFilter) {
+          const field = currentFilters.statFilter.field;
+          const value = currentFilters.statFilter.value;
+          if (row[field] !== value) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      updateFilteredImages();
+      renderDashboard();
+      loadInitialImages();
+      hideLoader();
+      showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
+    }
+
+    function updateFilteredImages() {
+      const uniqueImageMap = new Map();
+      filteredData.forEach(item => {
+        const imageId = item[CONFIG.fields.imageId];
+        if (imageId && !uniqueImageMap.has(imageId)) {
+          uniqueImageMap.set(imageId, item);
         }
       });
+      filteredUniqueImages = Array.from(uniqueImageMap.values());
+      currentImageIndex = 0;
+    }
+
+    function resetFilters() {
+      showLoader("Resetting filters...");
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
+      
+      elements.filterIssue.value = "";
+      elements.filterEnterprise.value = "";
+      
+      currentFilters.statFilter = null;
+      
+      applyFilters();
     }
 
     function renderDashboard(data = filteredData) {
@@ -582,6 +872,22 @@
         container.innerHTML = createStatsTable(summary, data.length);
       });
       setupStatFilters();
+    }
+
+    function setupStatFilters() {
+      CONFIG.statsCards.forEach(card => {
+        const container = document.getElementById(card.id);
+        container.addEventListener('click', (e) => {
+          const row = e.target.closest('tr');
+          if (row && row.dataset.value) {
+            currentFilters.statFilter = {
+              field: card.field,
+              value: decodeURIComponent(row.dataset.value)
+            };
+            applyFilters();
+          }
+        });
+      });
     }
 
     function summarizeData(data, field) {
@@ -607,27 +913,6 @@
       return html;
     }
 
-    function setupStatFilters() {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        container.addEventListener('click', (e) => {
-          const row = e.target.closest('tr');
-          if (row && row.dataset.value) {
-            const field = card.field;
-            const value = decodeURIComponent(row.dataset.value);
-            
-            if (field === CONFIG.fields.issue && elements.filterIssue) {
-              elements.filterIssue.value = value;
-            } else if (field === CONFIG.fields.enterprise && elements.filterEnterprise) {
-              elements.filterEnterprise.value = value;
-            }
-            
-            applyFilters();
-          }
-        });
-      });
-    }
-
     function populateFilters() {
       const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
       issueValues.forEach(val => {
@@ -645,65 +930,74 @@
       });
     }
 
-    function applyFilters() {
-      showLoader("Applying filters...");
-      const from = elements.filterDateFrom.valueAsDate;
-      const to = elements.filterDateTo.valueAsDate;
-      const issue = elements.filterIssue.value;
-      const ent = elements.filterEnterprise.value;
-      
-      filteredData = allData.filter(row => {
-        if (from && row.formattedDate < from) return false;
-        if (to) {
-          const end = new Date(to);
-          end.setHours(23, 59, 59, 999);
-          if (row.formattedDate > end) return false;
-        }
-        if (issue && row[CONFIG.fields.issue] !== issue) return false;
-        if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
-        return true;
-      });
-      
+    function loadInitialImages() {
+      elements.imagePanels.innerHTML = "";
       currentImageIndex = 0;
-      uniqueImages.clear();
-      renderDashboard();
-      loadInitialImages();
-      hideLoader();
-      showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
+      loadMoreImages();
     }
 
-    function resetFilters() {
-      showLoader("Resetting filters...");
-      // Reset date filters to default (last 30 days)
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
+    function handleScroll() {
+      const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
       
-      // Reset dropdown filters
-      elements.filterIssue.value = "";
-      elements.filterEnterprise.value = "";
+      if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
+        loadMoreImages();
+      }
+    }
+
+    function loadMoreImages() {
+      if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
+        elements.loadMoreBtn.style.display = 'none';
+        return;
+      }
       
-      // Apply the reset filters
-      applyFilters();
+      isLoading = true;
+      elements.loadMoreBtn.style.display = 'none';
+      
+      const batchSize = CONFIG.imagesPerBatch;
+      const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
+      
+      for (let i = currentImageIndex; i < batchEnd; i++) {
+        const item = filteredUniqueImages[i];
+        createImagePanel(item);
+      }
+      
+      currentImageIndex = batchEnd;
+      isLoading = false;
+      
+      if (currentImageIndex < filteredUniqueImages.length) {
+        elements.loadMoreBtn.style.display = 'block';
+      }
     }
 
-    function setupAutoRefresh() {
-      clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        fetchData();
-        setupAutoRefresh();
-      }, CONFIG.refreshInterval);
-    }
-
-    function showLoader(msg) {
-      elements.loaderText.textContent = msg;
-      elements.loader.style.display = 'flex';
-    }
-
-    function hideLoader() {
-      elements.loader.style.display = 'none';
+    function createImagePanel(item) {
+      const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
+      const row = document.createElement("div");
+      row.className = "image-row";
+      
+      row.innerHTML = `
+        <div class="image-panel">
+          <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
+          <div class="image-panel-header">Raw</div>
+          <div class="image-container">
+            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+          </div>
+        </div>
+        <div class="image-panel">
+          <div class="image-panel-header">AI</div>
+          <div class="image-container">
+            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+          </div>
+        </div>
+        <div class="image-panel">
+          <div class="image-panel-header">Manual</div>
+          <div class="image-container">
+            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+          </div>
+        </div>
+      `;
+      
+      elements.imagePanels.appendChild(row);
     }
 
     function showToast(msg, isError = false) {
@@ -717,83 +1011,12 @@
       elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
     }
 
-    function loadInitialImages() {
-      elements.imagePanels.innerHTML = "";
-      currentImageIndex = 0;
-      uniqueImages.clear();
-      loadMoreImages();
-    }
-
-    function handleScroll() {
-      const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
-      
-      if (nearBottom && !isLoading && currentImageIndex < filteredData.length) {
-        loadMoreImages();
-      }
-    }
-
-    function loadMoreImages() {
-      if (isLoading || currentImageIndex >= filteredData.length) {
-        elements.loadMoreBtn.style.display = 'none';
-        return;
-      }
-      
-      isLoading = true;
-      elements.loadMoreBtn.style.display = 'none'; // Hide button during auto-load
-      
-      // Process next batch
-      const batchSize = CONFIG.imagesPerBatch;
-      const batchEnd = Math.min(currentImageIndex + batchSize, filteredData.length);
-      
-      for (let i = currentImageIndex; i < batchEnd; i++) {
-        const item = filteredData[i];
-        const imageId = item[CONFIG.fields.imageId];
-        
-        if (!uniqueImages.has(imageId)) {
-          createImagePanel(item);
-          uniqueImages.add(imageId);
-        }
-      }
-      
-      currentImageIndex = batchEnd;
-      isLoading = false;
-      
-      // Show button only if there are more unique images remaining
-      const remainingImages = filteredData.slice(currentImageIndex)
-        .filter(item => !uniqueImages.has(item[CONFIG.fields.imageId]));
-      
-      elements.loadMoreBtn.style.display = remainingImages.length > 0 ? 'block' : 'none';
-    }
-
-    function createImagePanel(item) {
-      const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
-      const row = document.createElement("div");
-      row.className = "image-row";
-      
-      row.innerHTML = `
-        <div class="image-panel">
-          <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
-          <div class="image-panel-header">Raw</div>
-          <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-        <div class="image-panel">
-          <div class="image-panel-header">AI</div>
-          <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-        <div class="image-panel">
-          <div class="image-panel-header">Manual</div>
-          <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-      `;
-      
-      elements.imagePanels.appendChild(row);
+    function setupAutoRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        fetchData();
+        setupAutoRefresh();
+      }, CONFIG.refreshInterval);
     }
   </script>
 </body>
