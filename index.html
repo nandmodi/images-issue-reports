@@ -447,7 +447,7 @@
     </div>
 
     <div class="image-section">
-      <div class="image-section-header">Image Section</div>
+      <div class="image-section-header">Image Section (Showing Unique Images Only)</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
         <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More Images</button>
@@ -490,6 +490,7 @@
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
+    let uniqueImages = new Set(); // Track unique image IDs
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -623,10 +624,11 @@
         return true;
       });
       currentImageIndex = 0;
+      uniqueImages.clear(); // Clear the unique images set when filters change
       renderDashboard();
       loadInitialImages();
       hideLoader();
-      showToast(`Showing ${filteredData.length} records`);
+      showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
     }
 
     function refreshData() {
@@ -666,6 +668,7 @@
     function loadInitialImages() {
       elements.imagePanels.innerHTML = "";
       currentImageIndex = 0;
+      uniqueImages.clear(); // Clear the set when loading new images
       loadMoreImages();
     }
 
@@ -675,62 +678,78 @@
         return;
       }
       
-      const batchEnd = Math.min(currentImageIndex + CONFIG.imagesPerBatch, filteredData.length);
+      let loadedCount = 0;
+      let i = currentImageIndex;
       
-      for (let i = currentImageIndex; i < batchEnd; i++) {
+      // Loop through data until we've loaded the batch size or reached the end
+      while (i < filteredData.length && loadedCount < CONFIG.imagesPerBatch) {
         const item = filteredData[i];
-        const raw = item[CONFIG.fields.rawImage] || "";
-        const ai = item[CONFIG.fields.aiImage] || "";
-        const manual = item[CONFIG.fields.manualImage] || "";
+        const imageId = item[CONFIG.fields.imageId];
         
-        // Create a new row for each image (Raw, AI, Manual)
-        const row = document.createElement("div");
-        row.className = "image-row";
+        // Only process if we haven't seen this image before
+        if (!uniqueImages.has(imageId)) {
+          const raw = item[CONFIG.fields.rawImage] || "";
+          const ai = item[CONFIG.fields.aiImage] || "";
+          const manual = item[CONFIG.fields.manualImage] || "";
+          
+          // Create a new row for each image (Raw, AI, Manual)
+          const row = document.createElement("div");
+          row.className = "image-row";
+          
+          // Raw Image Panel
+          const rawPanel = document.createElement("div");
+          rawPanel.className = "image-panel";
+          rawPanel.innerHTML = `
+            <div class="image-id-header">${imageId || 'Image ID'}</div>
+            <div class="image-panel-header">Raw</div>
+            <div class="image-container">
+              ${raw ? `<img src="${raw}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          `;
+          
+          // AI Image Panel
+          const aiPanel = document.createElement("div");
+          aiPanel.className = "image-panel";
+          aiPanel.innerHTML = `
+            <div class="image-panel-header">AI</div>
+            <div class="image-container">
+              ${ai ? `<img src="${ai}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          `;
+          
+          // Manual Image Panel
+          const manualPanel = document.createElement("div");
+          manualPanel.className = "image-panel";
+          manualPanel.innerHTML = `
+            <div class="image-panel-header">Manual</div>
+            <div class="image-container">
+              ${manual ? `<img src="${manual}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          `;
+          
+          // Append all panels to the row
+          row.appendChild(rawPanel);
+          row.appendChild(aiPanel);
+          row.appendChild(manualPanel);
+          
+          // Append the row to the container
+          elements.imagePanels.appendChild(row);
+          
+          // Mark this image as shown
+          uniqueImages.add(imageId);
+          loadedCount++;
+        }
         
-        // Raw Image Panel
-        const rawPanel = document.createElement("div");
-        rawPanel.className = "image-panel";
-        rawPanel.innerHTML = `
-          <div class="image-id-header">${item[CONFIG.fields.imageId] || 'Image ID'}</div>
-          <div class="image-panel-header">Raw</div>
-          <div class="image-container">
-            ${raw ? `<img src="${raw}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        `;
-        
-        // AI Image Panel
-        const aiPanel = document.createElement("div");
-        aiPanel.className = "image-panel";
-        aiPanel.innerHTML = `
-          <div class="image-panel-header">AI</div>
-          <div class="image-container">
-            ${ai ? `<img src="${ai}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        `;
-        
-        // Manual Image Panel
-        const manualPanel = document.createElement("div");
-        manualPanel.className = "image-panel";
-        manualPanel.innerHTML = `
-          <div class="image-panel-header">Manual</div>
-          <div class="image-container">
-            ${manual ? `<img src="${manual}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        `;
-        
-        // Append all panels to the row
-        row.appendChild(rawPanel);
-        row.appendChild(aiPanel);
-        row.appendChild(manualPanel);
-        
-        // Append the row to the container
-        elements.imagePanels.appendChild(row);
+        i++;
       }
       
-      currentImageIndex = batchEnd;
+      currentImageIndex = i;
       
-      // Show/hide load more button based on whether there are more images
-      elements.loadMoreBtn.style.display = currentImageIndex < filteredData.length ? 'block' : 'none';
+      // Check if there are more unique images to show
+      const hasMoreUniqueImages = filteredData.slice(currentImageIndex).some(item => 
+        !uniqueImages.has(item[CONFIG.fields.imageId])
+      );
+      elements.loadMoreBtn.style.display = hasMoreUniqueImages ? 'block' : 'none';
     }
 
     function handleScroll() {
