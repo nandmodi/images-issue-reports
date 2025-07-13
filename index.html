@@ -178,6 +178,14 @@
       border-bottom: 1px solid var(--medium-gray);
     }
 
+    .percentage-card-body tbody tr {
+      cursor: pointer;
+    }
+    
+    .percentage-card-body tbody tr:hover {
+      background-color: rgba(66, 133, 244, 0.1);
+    }
+
     .bar-cell {
       position: relative;
       height: 20px;
@@ -218,7 +226,7 @@
     .image-panels {
       display: block;
       padding-bottom: 10px;
-      max-height: calc(100vh - 0px);
+      max-height: calc(100vh - 500px);
       overflow-y: auto;
     }
 
@@ -568,6 +576,7 @@
         const summary = summarizeData(data, card.field);
         container.innerHTML = createStatsTable(summary, data.length);
       });
+      setupStatFilters();
     }
 
     function summarizeData(data, field) {
@@ -583,10 +592,37 @@
       let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
       items.forEach(([key, count]) => {
         const percentage = ((count / totalCount) * 100).toFixed(1);
-        html += `<tr><td>${key}</td><td>${count}</td><td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td></tr>`;
+        html += `<tr data-value="${encodeURIComponent(key)}">
+          <td>${key}</td>
+          <td>${count}</td>
+          <td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td>
+        </tr>`;
       });
       html += `</tbody></table>`;
       return html;
+    }
+
+    function setupStatFilters() {
+      CONFIG.statsCards.forEach(card => {
+        const container = document.getElementById(card.id);
+        container.addEventListener('click', (e) => {
+          const row = e.target.closest('tr');
+          if (row && row.dataset.value) {
+            const field = card.field;
+            const value = decodeURIComponent(row.dataset.value);
+            
+            // Set the corresponding filter dropdown if it exists
+            if (field === CONFIG.fields.issue && elements.filterIssue) {
+              elements.filterIssue.value = value;
+            } else if (field === CONFIG.fields.enterprise && elements.filterEnterprise) {
+              elements.filterEnterprise.value = value;
+            }
+            
+            // Apply the filters
+            applyFilters();
+          }
+        });
+      });
     }
 
     function populateFilters() {
@@ -612,6 +648,7 @@
       const to = elements.filterDateTo.valueAsDate;
       const issue = elements.filterIssue.value;
       const ent = elements.filterEnterprise.value;
+      
       filteredData = allData.filter(row => {
         if (from && row.formattedDate < from) return false;
         if (to) {
@@ -623,8 +660,9 @@
         if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
         return true;
       });
+      
       currentImageIndex = 0;
-      uniqueImages.clear(); // Clear the unique images set when filters change
+      uniqueImages.clear();
       renderDashboard();
       loadInitialImages();
       hideLoader();
@@ -668,7 +706,7 @@
     function loadInitialImages() {
       elements.imagePanels.innerHTML = "";
       currentImageIndex = 0;
-      uniqueImages.clear(); // Clear the set when loading new images
+      uniqueImages.clear();
       loadMoreImages();
     }
 
