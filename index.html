@@ -212,19 +212,21 @@
       color: var(--primary-color);
       margin-bottom: 15px;
       text-align: center;
+      font-size: 18px;
     }
 
     .image-panels {
       display: block;
       padding-bottom: 10px;
-      max-height: 800px;
+      max-height: calc(100vh - 500px);
       overflow-y: auto;
     }
 
     .image-row {
       display: flex;
       gap: 15px;
-      margin-bottom: 15px;
+      margin-bottom: 30px;
+      width: 100%;
     }
 
     .image-panel {
@@ -233,6 +235,9 @@
       padding: 15px;
       text-align: center;
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 400px;
     }
 
     .image-panel-header {
@@ -240,10 +245,11 @@
       margin-bottom: 15px;
       color: var(--dark-gray);
       text-align: center;
+      font-size: 16px;
     }
 
     .image-container {
-      height: 200px;
+      flex: 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -251,12 +257,20 @@
       border: 1px solid var(--medium-gray);
       border-radius: 4px;
       overflow: hidden;
+      width: 100%;
+      position: relative;
     }
 
     .image-container img {
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
       object-fit: contain;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     #loader {
@@ -330,6 +344,10 @@
       .image-row {
         flex-direction: column;
       }
+      
+      .image-panel {
+        min-height: 300px;
+      }
     }
 
     .percentage-card-body#subIssueStats {
@@ -361,8 +379,14 @@
     
     .image-id-header {
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
       color: var(--primary-color);
+      font-size: 18px;
+    }
+    
+    .no-image {
+      color: var(--dark-gray);
+      font-style: italic;
     }
   </style>
 </head>
@@ -670,7 +694,7 @@
           <div class="image-id-header">${item[CONFIG.fields.imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            <img src="${raw}" alt="Raw Image" style="${raw ? '' : 'display:none;'}">
+            ${raw ? `<img src="${raw}" alt="Raw Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         `;
         
@@ -680,7 +704,7 @@
         aiPanel.innerHTML = `
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            <img src="${ai}" alt="AI Image" style="${ai ? '' : 'display:none;'}">
+            ${ai ? `<img src="${ai}" alt="AI Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         `;
         
@@ -690,7 +714,7 @@
         manualPanel.innerHTML = `
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            <img src="${manual}" alt="Manual Image" style="${manual ? '' : 'display:none;'}">
+            ${manual ? `<img src="${manual}" alt="Manual Image" onerror="this.style.display='none'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         `;
         
