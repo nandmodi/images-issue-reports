@@ -9,7 +9,6 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
-    /* Your existing CSS remains unchanged */
     :root {
       --primary-color: #4285f4;
       --secondary-color: #34a853;
@@ -294,7 +293,7 @@
       width: 100%;
       height: 100%;
       background: rgba(255, 255, 255, 0.9);
-      display: none;
+      display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -501,8 +500,7 @@
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
       ],
-      imagesPerBatch: 10, // Changed to 10 images per batch
-      
+      imagesPerBatch: 10
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
@@ -552,14 +550,9 @@
           }
           allData = parsed.data.filter(row => Object.values(row).some(val => val));
           allData.forEach(item => {
-            if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
-            
-            const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
-            imageFields.forEach(field => {
-              if (item[field] && item[field].startsWith(CONFIG.imageUrlPrefix)) {
-                item[field] = item[field].substring(CONFIG.imageUrlPrefix.length);
-              }
-            });
+            if (item[CONFIG.fields.date]) {
+              item.formattedDate = new Date(item[CONFIG.fields.date]);
+            }
           });
           filteredData = [...allData];
           renderDashboard();
@@ -655,11 +648,11 @@
       const ent = elements.filterEnterprise.value;
       
       filteredData = allData.filter(row => {
-        if (from && row.formattedDate < from) return false;
+        if (from && (!row.formattedDate || row.formattedDate < from)) return false;
         if (to) {
           const end = new Date(to);
           end.setHours(23, 59, 59, 999);
-          if (row.formattedDate > end) return false;
+          if (!row.formattedDate || row.formattedDate > end) return false;
         }
         if (issue && row[CONFIG.fields.issue] !== issue) return false;
         if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
@@ -777,29 +770,24 @@
       const row = document.createElement("div");
       row.className = "image-row";
       
-      // Ensure image URLs are properly constructed
-      const rawImgUrl = item[rawImage] ? `${CONFIG.imageUrlPrefix}${item[rawImage]}` : '';
-      const aiImgUrl = item[aiImage] ? `${CONFIG.imageUrlPrefix}${item[aiImage]}` : '';
-      const manualImgUrl = item[manualImage] ? `${CONFIG.imageUrlPrefix}${item[manualImage]}` : '';
-      
       row.innerHTML = `
         <div class="image-panel">
           <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
           <div class="image-panel-header">Raw</div>
           <div class="image-container">
-            ${rawImgUrl ? `<img src="${rawImgUrl}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">AI</div>
           <div class="image-container">
-            ${aiImgUrl ? `<img src="${aiImgUrl}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
         <div class="image-panel">
           <div class="image-panel-header">Manual</div>
           <div class="image-container">
-            ${manualImgUrl ? `<img src="${manualImgUrl}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
