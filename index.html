@@ -217,6 +217,8 @@
     .image-panels {
       display: block;
       padding-bottom: 10px;
+      max-height: 800px;
+      overflow-y: auto;
     }
 
     .image-row {
@@ -333,6 +335,24 @@
       min-width: 600px;
       table-layout: auto !important;
     }
+    
+    .load-more {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .load-more-btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .load-more-btn:hover {
+      background-color: #3367d6;
+    }
   </style>
 </head>
 <body>
@@ -394,6 +414,9 @@
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
+      <div class="load-more">
+        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More Images</button>
+      </div>
     </div>
 
     <div class="footer">
@@ -426,7 +449,8 @@
         { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
-      ]
+      ],
+      imagesPerBatch: 15 // 5 rows (3 images per row) = 15 images per batch
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
@@ -439,7 +463,9 @@
       filterDateFrom: document.getElementById("filterDateFrom"),
       filterDateTo: document.getElementById("filterDateTo"),
       filterIssue: document.getElementById("filterIssue"),
-      filterEnterprise: document.getElementById("filterEnterprise")
+      filterEnterprise: document.getElementById("filterEnterprise"),
+      imagePanels: document.getElementById("imagePanels"),
+      loadMoreBtn: document.getElementById("loadMoreBtn")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
@@ -453,6 +479,10 @@
       thirtyDaysAgo.setDate(today.getDate() - 30);
       elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
       elements.filterDateTo.valueAsDate = today;
+      
+      // Set up scroll event for infinite loading
+      elements.imagePanels.addEventListener('scroll', handleScroll);
+      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
     }
 
     function fetchData() {
@@ -474,7 +504,7 @@
           filteredData = [...allData];
           renderDashboard();
           populateFilters();
-          loadCurrentImage();
+          loadInitialImages();
           updateLastUpdated();
           showToast("Data loaded successfully");
           hideLoader();
@@ -550,7 +580,7 @@
       });
       currentImageIndex = 0;
       renderDashboard();
-      loadCurrentImage();
+      loadInitialImages();
       hideLoader();
       showToast(`Showing ${filteredData.length} records`);
     }
@@ -589,37 +619,69 @@
       elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
     }
 
-    function loadCurrentImage() {
-      const panel = document.getElementById("imagePanels");
-      panel.innerHTML = "";
-      if (!filteredData.length) return;
+    function loadInitialImages() {
+      elements.imagePanels.innerHTML = "";
+      currentImageIndex = 0;
+      loadMoreImages();
+    }
 
-      for (let i = currentImageIndex; i < Math.min(currentImageIndex + 5, filteredData.length); i++) {
-        const item = filteredData[i];
-        const raw = item[CONFIG.fields.rawImage] || "";
-        const ai = item[CONFIG.fields.aiImage] || "";
-        const manual = item[CONFIG.fields.manualImage] || "";
-
+    function loadMoreImages() {
+      if (currentImageIndex >= filteredData.length) {
+        elements.loadMoreBtn.style.display = 'none';
+        return;
+      }
+      
+      const batchEnd = Math.min(currentImageIndex + CONFIG.imagesPerBatch, filteredData.length);
+      
+      for (let i = currentImageIndex; i < batchEnd; i += 3) {
+        const rowEnd = Math.min(i + 3, batchEnd);
+        const rowItems = filteredData.slice(i, rowEnd);
+        
+        if (rowItems.length === 0) continue;
+        
         const row = document.createElement("div");
         row.className = "image-row";
+        
+        rowItems.forEach(item => {
+          const raw = item[CONFIG.fields.rawImage] || "";
+          const ai = item[CONFIG.fields.aiImage] || "";
+          const manual = item[CONFIG.fields.manualImage] || "";
 
-        [
-          { label: "Raw", src: raw },
-          { label: "AI", src: ai },
-          { label: "Manual", src: manual }
-        ].forEach(({ label, src }) => {
           const imgPanel = document.createElement("div");
           imgPanel.className = "image-panel";
           imgPanel.innerHTML = `
-            <div class="image-panel-header">${label}</div>
+            <div class="image-panel-header">${item[CONFIG.fields.imageId] || 'Image'}</div>
             <div class="image-container">
-              <img src="${src}" alt="${label} Image" style="${src ? '' : 'display:none;'}">
+              <img src="${raw}" alt="Raw Image" style="${raw ? '' : 'display:none;'}">
+            </div>
+            <div class="image-panel-header">AI vs Manual</div>
+            <div class="image-container">
+              <img src="${ai}" alt="AI Image" style="${ai ? '' : 'display:none;'}">
+            </div>
+            <div class="image-container">
+              <img src="${manual}" alt="Manual Image" style="${manual ? '' : 'display:none;'}">
             </div>
           `;
           row.appendChild(imgPanel);
         });
+        
+        elements.imagePanels.appendChild(row);
+      }
+      
+      currentImageIndex = batchEnd;
+      
+      // Show/hide load more button based on whether there are more images
+      elements.loadMoreBtn.style.display = currentImageIndex < filteredData.length ? 'block' : 'none';
+    }
 
-        panel.appendChild(row);
+    function handleScroll() {
+      const panels = elements.imagePanels;
+      const scrollPosition = panels.scrollTop + panels.clientHeight;
+      const scrollHeight = panels.scrollHeight;
+      
+      // Load more when scrolled near bottom (within 200px)
+      if (scrollHeight - scrollPosition < 200 && currentImageIndex < filteredData.length) {
+        loadMoreImages();
       }
     }
   </script>
