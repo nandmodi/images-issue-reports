@@ -239,6 +239,7 @@
       font-weight: 500;
       margin-bottom: 15px;
       color: var(--dark-gray);
+      text-align: center;
     }
 
     .image-container {
@@ -325,6 +326,10 @@
       .percentage-card-body tbody {
         max-height: 200px;
       }
+      
+      .image-row {
+        flex-direction: column;
+      }
     }
 
     .percentage-card-body#subIssueStats {
@@ -352,6 +357,12 @@
     
     .load-more-btn:hover {
       background-color: #3367d6;
+    }
+    
+    .image-id-header {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: var(--primary-color);
     }
   </style>
 </head>
@@ -633,38 +644,53 @@
       
       const batchEnd = Math.min(currentImageIndex + CONFIG.imagesPerBatch, filteredData.length);
       
-      for (let i = currentImageIndex; i < batchEnd; i += 3) {
-        const rowEnd = Math.min(i + 3, batchEnd);
-        const rowItems = filteredData.slice(i, rowEnd);
+      for (let i = currentImageIndex; i < batchEnd; i++) {
+        const item = filteredData[i];
+        const raw = item[CONFIG.fields.rawImage] || "";
+        const ai = item[CONFIG.fields.aiImage] || "";
+        const manual = item[CONFIG.fields.manualImage] || "";
         
-        if (rowItems.length === 0) continue;
-        
+        // Create a new row for each image (Raw, AI, Manual)
         const row = document.createElement("div");
         row.className = "image-row";
         
-        rowItems.forEach(item => {
-          const raw = item[CONFIG.fields.rawImage] || "";
-          const ai = item[CONFIG.fields.aiImage] || "";
-          const manual = item[CONFIG.fields.manualImage] || "";
-
-          const imgPanel = document.createElement("div");
-          imgPanel.className = "image-panel";
-          imgPanel.innerHTML = `
-            <div class="image-panel-header">${item[CONFIG.fields.imageId] || 'Image'}</div>
-            <div class="image-container">
-              <img src="${raw}" alt="Raw Image" style="${raw ? '' : 'display:none;'}">
-            </div>
-            <div class="image-panel-header">AI vs Manual</div>
-            <div class="image-container">
-              <img src="${ai}" alt="AI Image" style="${ai ? '' : 'display:none;'}">
-            </div>
-            <div class="image-container">
-              <img src="${manual}" alt="Manual Image" style="${manual ? '' : 'display:none;'}">
-            </div>
-          `;
-          row.appendChild(imgPanel);
-        });
+        // Raw Image Panel
+        const rawPanel = document.createElement("div");
+        rawPanel.className = "image-panel";
+        rawPanel.innerHTML = `
+          <div class="image-id-header">${item[CONFIG.fields.imageId] || 'Image ID'}</div>
+          <div class="image-panel-header">Raw</div>
+          <div class="image-container">
+            <img src="${raw}" alt="Raw Image" style="${raw ? '' : 'display:none;'}">
+          </div>
+        `;
         
+        // AI Image Panel
+        const aiPanel = document.createElement("div");
+        aiPanel.className = "image-panel";
+        aiPanel.innerHTML = `
+          <div class="image-panel-header">AI</div>
+          <div class="image-container">
+            <img src="${ai}" alt="AI Image" style="${ai ? '' : 'display:none;'}">
+          </div>
+        `;
+        
+        // Manual Image Panel
+        const manualPanel = document.createElement("div");
+        manualPanel.className = "image-panel";
+        manualPanel.innerHTML = `
+          <div class="image-panel-header">Manual</div>
+          <div class="image-container">
+            <img src="${manual}" alt="Manual Image" style="${manual ? '' : 'display:none;'}">
+          </div>
+        `;
+        
+        // Append all panels to the row
+        row.appendChild(rawPanel);
+        row.appendChild(aiPanel);
+        row.appendChild(manualPanel);
+        
+        // Append the row to the container
         elements.imagePanels.appendChild(row);
       }
       
