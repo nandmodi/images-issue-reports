@@ -320,6 +320,36 @@
       margin-bottom: 15px;
     }
 
+    .progress-container {
+      width: 80%;
+      max-width: 400px;
+      background-color: var(--medium-gray);
+      border-radius: 20px;
+      margin: 15px 0;
+      height: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      line-height: 20px;
+      color: var(--white);
+      font-size: 12px;
+      text-shadow: 0 0 2px rgba(0,0,0,0.5);
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -484,6 +514,10 @@
   <div id="loader">
     <div class="spinner"></div>
     <div id="loaderText">Loading data...</div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
     <button id="cancelLoad" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
   </div>
   <div id="toast"></div>
@@ -540,7 +574,9 @@
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
       loadMoreBtn: document.getElementById("loadMoreBtn"),
-      cancelLoad: document.getElementById("cancelLoad")
+      cancelLoad: document.getElementById("cancelLoad"),
+      progressBar: document.getElementById("progressBar"),
+      progressText: document.getElementById("progressText")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
@@ -560,7 +596,6 @@
 
     function cancelLoading() {
       if (currentParse) {
-        // Attempt to abort the parsing if possible
         if (currentParse.abort) {
           currentParse.abort();
         }
@@ -571,20 +606,31 @@
 
     function fetchData() {
       showLoader("Loading data from spreadsheet...");
+      updateProgress(0);
       
-      // Show a progress message after 3 seconds if still loading
-      const progressTimer = setTimeout(() => {
-        if (elements.loader.style.display === 'flex') {
-          elements.loaderText.textContent = "Still loading... This might take a while for large datasets";
-        }
-      }, 3000);
+      let loadedBytes = 0;
+      let totalBytes = 0;
       
       currentParse = Papa.parse(CONFIG.sheetUrl, {
         download: true,
         header: true,
         skipEmptyLines: true,
+        beforeFirstChunk: function(chunk) {
+          const contentLength = chunk.split('\n')[0].match(/Content-Length: (\d+)/i);
+          if (contentLength && contentLength[1]) {
+            totalBytes = parseInt(contentLength[1]);
+          }
+          return chunk;
+        },
+        chunk: function(chunk) {
+          if (totalBytes > 0) {
+            loadedBytes += chunk.length;
+            const percent = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
+            updateProgress(percent);
+          }
+        },
         complete: function(results) {
-          clearTimeout(progressTimer);
+          updateProgress(100);
           allData = results.data.filter(row => 
             Object.values(row).some(val => val && val.trim() !== '')
           ).map(item => {
@@ -600,10 +646,9 @@
           loadInitialImages();
           updateLastUpdated();
           showToast("Data loaded successfully");
-          hideLoader();
+          setTimeout(hideLoader, 500);
         },
         error: function(err) {
-          clearTimeout(progressTimer);
           console.error(err);
           showToast("Error loading data", true);
           hideLoader();
@@ -611,28 +656,32 @@
       });
     }
 
+    function updateProgress(percent) {
+      elements.progressBar.style.width = percent + '%';
+      elements.progressText.textContent = percent + '%';
+      elements.loaderText.textContent = 
+        percent < 100 ? `Loading data... (${percent}%)` : "Processing data...";
+    }
+
     function showLoader(message) {
       elements.loaderText.textContent = message;
       elements.loader.style.display = 'flex';
       document.body.style.overflow = 'hidden';
+      updateProgress(0);
     }
 
     function hideLoader() {
-      // Add a small delay to prevent flickering if loading was very fast
+      elements.loader.style.opacity = '0';
       setTimeout(() => {
-        elements.loader.style.opacity = '0';
-        setTimeout(() => {
-          elements.loader.style.display = 'none';
-          elements.loader.style.opacity = '1';
-          document.body.style.overflow = '';
-        }, 300);
-      }, 200);
+        elements.loader.style.display = 'none';
+        elements.loader.style.opacity = '1';
+        document.body.style.overflow = '';
+      }, 300);
     }
 
     function applyFilters() {
       showLoader("Applying filters...");
       
-      // Update current filters from UI
       currentFilters = {
         dateFrom: elements.filterDateFrom.valueAsDate,
         dateTo: elements.filterDateTo.valueAsDate,
@@ -642,7 +691,6 @@
       };
 
       filteredData = allData.filter(row => {
-        // Date filtering
         if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
           return false;
         }
@@ -654,7 +702,6 @@
           }
         }
 
-        // Dropdown filters
         if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
           return false;
         }
@@ -662,7 +709,6 @@
           return false;
         }
 
-        // Stat table filter
         if (currentFilters.statFilter) {
           const field = currentFilters.statFilter.field;
           const value = currentFilters.statFilter.value;
@@ -695,21 +741,17 @@
 
     function resetFilters() {
       showLoader("Resetting filters...");
-      // Reset date filters to default (last 30 days)
       const today = new Date();
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(today.getDate() - 30);
       elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
       elements.filterDateTo.valueAsDate = today;
       
-      // Reset dropdown filters
       elements.filterIssue.value = "";
       elements.filterEnterprise.value = "";
       
-      // Clear stat filter
       currentFilters.statFilter = null;
       
-      // Apply the reset filters
       applyFilters();
     }
 
