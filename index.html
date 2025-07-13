@@ -152,28 +152,65 @@
       font-size: 13px;
     }
 
-    .percentage-card-body table {
-      width: 100%;
-      border-collapse: collapse;
+    /* Restored original Issue section style */
+    .percentage-card-body#issueStats {
+      display: block;
+      overflow-y: auto;
+      max-height: 300px;
     }
 
-    .percentage-card-body thead {
+    .percentage-card-body#issueStats table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .percentage-card-body#issueStats thead {
       position: sticky;
       top: 0;
       background-color: var(--white);
       z-index: 1;
     }
 
-    .percentage-card-body tbody {
+    .percentage-card-body#issueStats tbody {
       display: block;
-      max-height: 300px;
       overflow-y: auto;
     }
 
-    .percentage-card-body tr {
+    .percentage-card-body#issueStats tr {
       display: table;
       width: 100%;
       table-layout: fixed;
+    }
+
+    /* Keep modified Sub Issue section style */
+    .percentage-card-body#subIssueStats {
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 38px);
+    }
+    
+    .percentage-card-body#subIssueStats table {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 600px;
+      table-layout: auto !important;
+    }
+    
+    .percentage-card-body#subIssueStats thead {
+      flex: 0 0 auto;
+    }
+    
+    .percentage-card-body#subIssueStats tbody {
+      flex: 1;
+      overflow-y: auto;
+      max-height: none !important;
+    }
+
+    .percentage-card-body table {
+      width: 100%;
+      border-collapse: collapse;
     }
 
     .percentage-card-body th,
@@ -362,61 +399,6 @@
       }
     }
 
-    /* Modified sub-issue section styles */
-    .percentage-card-body#subIssueStats {
-      display: flex;
-      flex-direction: column;
-      height: calc(100% - 38px);
-    }
-    
-    .percentage-card-body#subIssueStats table {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 600px;
-      table-layout: auto !important;
-    }
-    
-    .percentage-card-body#subIssueStats thead {
-      flex: 0 0 auto;
-    }
-    
-    .percentage-card-body#subIssueStats tbody {
-      flex: 1;
-      overflow-y: auto;
-      max-height: none !important;
-    }
-    
-    .load-more {
-      text-align: center;
-      margin-top: 20px;
-    }
-    
-    .load-more-btn {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    .load-more-btn:hover {
-      background-color: #3367d6;
-    }
-    
-    .image-id-header {
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: var(--primary-color);
-      font-size: 18px;
-    }
-    
-    .no-image {
-      color: var(--dark-gray);
-      font-style: italic;
-    }
-    
     /* Data sync loader styles */
     #data-sync-loader {
       position: fixed;
@@ -484,6 +466,36 @@
       font-size: 12px;
       color: var(--dark-gray);
       text-align: center;
+    }
+    
+    .load-more {
+      text-align: center;
+      margin-top: 20px;
+    }
+    
+    .load-more-btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .load-more-btn:hover {
+      background-color: #3367d6;
+    }
+    
+    .image-id-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+      font-size: 18px;
+    }
+    
+    .no-image {
+      color: var(--dark-gray);
+      font-style: italic;
     }
   </style>
 </head>
@@ -883,7 +895,7 @@
         html += `<tr data-value="${encodeURIComponent(key)}">
           <td>${key}</td>
           <td>${count}</td>
-          
+          <td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td>
         </tr>`;
       });
       html += `</tbody></table>`;
