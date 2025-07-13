@@ -461,7 +461,8 @@
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
       ],
-      imagesPerBatch: 15 // 5 rows (3 images per row) = 15 images per batch
+      imagesPerBatch: 15,
+      imageUrlPrefix: "https://media.spyneai.com/unsafe/0x0/filters:format(webp)/"
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
@@ -511,6 +512,14 @@
           allData = parsed.data.filter(row => Object.values(row).some(val => val));
           allData.forEach(item => {
             if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
+            
+            // Clean image URLs by removing the prefix if it exists
+            const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
+            imageFields.forEach(field => {
+              if (item[field] && item[field].startsWith(CONFIG.imageUrlPrefix)) {
+                item[field] = item[field].substring(CONFIG.imageUrlPrefix.length);
+              }
+            });
           });
           filteredData = [...allData];
           renderDashboard();
