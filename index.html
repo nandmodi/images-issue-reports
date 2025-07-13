@@ -508,6 +508,7 @@
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
     let uniqueImages = new Set();
     let isLoading = false;
+    let filteredUniqueImages = [];
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -532,6 +533,7 @@
       
       // Initialize infinite scroll
       elements.imagePanels.addEventListener('scroll', handleScroll);
+      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
     }
 
     function fetchData() {
@@ -664,12 +666,22 @@
         return true;
       });
       
+      // Create a list of unique image IDs from the filtered data
+      const uniqueImageMap = new Map();
+      filteredData.forEach(item => {
+        const imageId = item[CONFIG.fields.imageId];
+        if (imageId && !uniqueImageMap.has(imageId)) {
+          uniqueImageMap.set(imageId, item);
+        }
+      });
+      filteredUniqueImages = Array.from(uniqueImageMap.values());
+      
       currentImageIndex = 0;
       uniqueImages.clear();
       renderDashboard();
       loadInitialImages();
       hideLoader();
-      showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
+      showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
     }
 
     function resetFilters() {
@@ -728,13 +740,13 @@
       const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
       const nearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
       
-      if (nearBottom && !isLoading && currentImageIndex < filteredData.length) {
+      if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
         loadMoreImages();
       }
     }
 
     function loadMoreImages() {
-      if (isLoading || currentImageIndex >= filteredData.length) {
+      if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
         elements.loadMoreBtn.style.display = 'none';
         return;
       }
@@ -744,26 +756,20 @@
       
       // Process next batch
       const batchSize = CONFIG.imagesPerBatch;
-      const batchEnd = Math.min(currentImageIndex + batchSize, filteredData.length);
+      const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
       
       for (let i = currentImageIndex; i < batchEnd; i++) {
-        const item = filteredData[i];
-        const imageId = item[CONFIG.fields.imageId];
-        
-        if (!uniqueImages.has(imageId)) {
-          createImagePanel(item);
-          uniqueImages.add(imageId);
-        }
+        const item = filteredUniqueImages[i];
+        createImagePanel(item);
       }
       
       currentImageIndex = batchEnd;
       isLoading = false;
       
-      // Show button only if there are more unique images remaining
-      const remainingImages = filteredData.slice(currentImageIndex)
-        .filter(item => !uniqueImages.has(item[CONFIG.fields.imageId]));
-      
-      elements.loadMoreBtn.style.display = remainingImages.length > 0 ? 'block' : 'none';
+      // Show button if there are more images remaining
+      if (currentImageIndex < filteredUniqueImages.length) {
+        elements.loadMoreBtn.style.display = 'block';
+      }
     }
 
     function createImagePanel(item) {
