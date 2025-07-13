@@ -231,7 +231,7 @@
     .image-panels {
       display: block;
       padding-bottom: 10px;
-      max-height: calc(100vh - 0px);
+      max-height: calc(100vh - 500px);
       overflow-y: auto;
     }
 
@@ -487,6 +487,7 @@
       <div class="image-section-header">Image Section (Showing Unique Images Only)</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
+        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">Load More Images</button>
       </div>
     </div>
 
@@ -532,6 +533,7 @@
     let uniqueImages = new Set();
     let isLoading = false;
     let isInitialLoad = true;
+    let imagesLoading = 0;
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -550,7 +552,7 @@
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
-      showLoader("Loading dashboard...");
+      showLoader("Initializing dashboard...");
       fetchData();
       setupAutoRefresh();
       resetFilters();
@@ -824,39 +826,40 @@
       elements.loadMoreBtn.style.display = 'none';
       elements.loadMoreBtn.textContent = "Loading...";
       
+      // Show loader if this is the first batch
+      if (currentImageIndex === 0) {
+        showLoader("Loading images...");
+      }
+
       // Process next batch
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredData.length);
-      let loadedCount = 0;
+      imagesLoading = 0;
       
-      // Use setTimeout to allow UI to update
-      setTimeout(() => {
-        for (let i = currentImageIndex; i < batchEnd; i++) {
-          const item = filteredData[i];
-          const imageId = item[CONFIG.fields.imageId];
-          
-          if (!uniqueImages.has(imageId)) {
-            createImagePanel(item);
-            uniqueImages.add(imageId);
-            loadedCount++;
-          }
+      // Create all panels first
+      const fragment = document.createDocumentFragment();
+      for (let i = currentImageIndex; i < batchEnd; i++) {
+        const item = filteredData[i];
+        const imageId = item[CONFIG.fields.imageId];
+        
+        if (!uniqueImages.has(imageId)) {
+          const panel = createImagePanel(item, true);
+          fragment.appendChild(panel);
+          uniqueImages.add(imageId);
+          imagesLoading += 3; // Count each image to load
         }
-        
-        currentImageIndex = batchEnd;
-        isLoading = false;
-        elements.loadMoreBtn.textContent = "Load More Images";
-        
-        // Show button if there are more images to load
-        const hasMoreImages = currentImageIndex < filteredData.length && 
-          filteredData.slice(currentImageIndex).some(item => 
-            !uniqueImages.has(item[CONFIG.fields.imageId])
-          );
-        
-        elements.loadMoreBtn.style.display = hasMoreImages ? 'block' : 'none';
-      }, 100);
+      }
+      
+      elements.imagePanels.appendChild(fragment);
+      currentImageIndex = batchEnd;
+      
+      // If no images need loading, complete immediately
+      if (imagesLoading === 0) {
+        completeImageLoading();
+      }
     }
 
-    function createImagePanel(item) {
+    function createImagePanel(item, trackLoading = false) {
       const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
       const row = document.createElement("div");
       row.className = "image-row";
@@ -868,8 +871,8 @@
           <div class="image-container">
             ${item[rawImage] ? 
               `<img src="${item[rawImage]}" alt="Raw Image" 
-                onload="this.classList.add('loaded')" 
-                onerror="this.style.display='none'" 
+                onload="imageLoaded()" 
+                onerror="imageLoaded()" 
                 style="opacity:0;transition:opacity 0.3s">` : 
               '<div class="no-image">No Image Available</div>'}
           </div>
@@ -879,8 +882,8 @@
           <div class="image-container">
             ${item[aiImage] ? 
               `<img src="${item[aiImage]}" alt="AI Image" 
-                onload="this.classList.add('loaded')" 
-                onerror="this.style.display='none'" 
+                onload="imageLoaded()" 
+                onerror="imageLoaded()" 
                 style="opacity:0;transition:opacity 0.3s">` : 
               '<div class="no-image">No Image Available</div>'}
           </div>
@@ -890,15 +893,55 @@
           <div class="image-container">
             ${item[manualImage] ? 
               `<img src="${item[manualImage]}" alt="Manual Image" 
-                onload="this.classList.add('loaded')" 
-                onerror="this.style.display='none'" 
+                onload="imageLoaded()" 
+                onerror="imageLoaded()" 
                 style="opacity:0;transition:opacity 0.3s">` : 
               '<div class="no-image">No Image Available</div>'}
           </div>
         </div>
       `;
       
-      elements.imagePanels.appendChild(row);
+      return row;
+    }
+
+    // Global function for image loading callback
+    window.imageLoaded = function() {
+      if (this.complete && this.naturalWidth !== 0) {
+        this.classList.add('loaded');
+      } else {
+        this.style.display = 'none';
+        const container = this.parentElement;
+        const noImageDiv = document.createElement('div');
+        noImageDiv.className = 'no-image';
+        noImageDiv.textContent = 'No Image Available';
+        container.appendChild(noImageDiv);
+      }
+      
+      if (isLoading) {
+        imagesLoading--;
+        if (imagesLoading <= 0) {
+          completeImageLoading();
+        }
+      }
+    };
+
+    function completeImageLoading() {
+      isLoading = false;
+      elements.loadMoreBtn.textContent = "Load More Images";
+      
+      // Show button if there are more images to load
+      const hasMoreImages = currentImageIndex < filteredData.length && 
+        filteredData.slice(currentImageIndex).some(item => 
+          !uniqueImages.has(item[CONFIG.fields.imageId])
+        );
+      
+      elements.loadMoreBtn.style.display = hasMoreImages ? 'block' : 'none';
+      
+      // Hide loader after first batch is loaded
+      if (isInitialLoad) {
+        isInitialLoad = false;
+        hideLoader();
+      }
     }
   </script>
 </body>
