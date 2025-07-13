@@ -362,13 +362,29 @@
       }
     }
 
+    /* Modified sub-issue section styles */
     .percentage-card-body#subIssueStats {
-      overflow-x: auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100% - 38px);
     }
-
+    
     .percentage-card-body#subIssueStats table {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
       min-width: 600px;
       table-layout: auto !important;
+    }
+    
+    .percentage-card-body#subIssueStats thead {
+      flex: 0 0 auto;
+    }
+    
+    .percentage-card-body#subIssueStats tbody {
+      flex: 1;
+      overflow-y: auto;
+      max-height: none !important;
     }
     
     .load-more {
@@ -399,6 +415,47 @@
     .no-image {
       color: var(--dark-gray);
       font-style: italic;
+    }
+    
+    /* Added data sync loader styles */
+    #data-sync-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .sync-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(66, 133, 244, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary-color);
+      animation: spin 1s ease-in-out infinite;
+      margin-bottom: 15px;
+    }
+    
+    .sync-progress {
+      width: 200px;
+      height: 4px;
+      background-color: var(--medium-gray);
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    
+    .sync-progress-bar {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
     }
   </style>
 </head>
@@ -474,6 +531,16 @@
     <div class="spinner"></div>
     <div id="loaderText">Loading data...</div>
   </div>
+  
+  <!-- Added data sync loader -->
+  <div id="data-sync-loader" style="display: none;">
+    <div class="sync-spinner"></div>
+    <div id="sync-loader-text">Syncing data...</div>
+    <div class="sync-progress">
+      <div class="sync-progress-bar" id="sync-progress-bar"></div>
+    </div>
+  </div>
+  
   <div id="toast"></div>
 
   <script>
@@ -526,16 +593,45 @@
       filterIssue: document.getElementById("filterIssue"),
       filterEnterprise: document.getElementById("filterEnterprise"),
       imagePanels: document.getElementById("imagePanels"),
-      loadMoreBtn: document.getElementById("loadMoreBtn")
+      loadMoreBtn: document.getElementById("loadMoreBtn"),
+      dataSyncLoader: document.getElementById("data-sync-loader"),
+      syncLoaderText: document.getElementById("sync-loader-text"),
+      syncProgressBar: document.getElementById("sync-progress-bar")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
       showLoader("Initializing dashboard...");
-      fetchData();
-      setupEventListeners();
-      resetFilters();
+      showDataSyncLoader(); // Show sync loader initially
+      simulateDataSync(); // Simulate data sync process
+      // fetchData() will be called after sync completes
+    }
+
+    function simulateDataSync() {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        if (progress > 100) {
+          clearInterval(interval);
+          elements.syncLoaderText.textContent = "Data sync complete!";
+          setTimeout(() => {
+            hideDataSyncLoader();
+            fetchData(); // Now fetch the actual data
+          }, 500);
+        } else {
+          elements.syncProgressBar.style.width = `${progress}%`;
+          elements.syncLoaderText.textContent = `Syncing data... ${progress}%`;
+        }
+      }, 100);
+    }
+
+    function showDataSyncLoader() {
+      elements.dataSyncLoader.style.display = 'flex';
+    }
+
+    function hideDataSyncLoader() {
+      elements.dataSyncLoader.style.display = 'none';
     }
 
     function setupEventListeners() {
