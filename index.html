@@ -480,7 +480,7 @@
   <script>
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 86400000, // 24 hours in milliseconds
+      refreshInterval: 86400000,
       fields: {
         date: "createdDate",
         imageType: "image_category",
@@ -503,10 +503,19 @@
       imagesPerBatch: 10
     };
 
-    let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
-    let uniqueImages = new Set();
-    let isLoading = false;
+    let allData = [];
+    let filteredData = [];
+    let currentImageIndex = 0;
+    let refreshTimer = null;
     let filteredUniqueImages = [];
+    let isLoading = false;
+    let currentFilters = {
+      dateFrom: null,
+      dateTo: null,
+      issue: null,
+      enterprise: null,
+      statFilter: null
+    };
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -524,36 +533,33 @@
     document.addEventListener('DOMContentLoaded', initDashboard);
 
     function initDashboard() {
-      showLoader("Loading dashboard...");
+      showLoader("Initializing dashboard...");
       fetchData();
-      setupAutoRefresh();
+      setupEventListeners();
       resetFilters();
-      
-      // Initialize infinite scroll
+    }
+
+    function setupEventListeners() {
       elements.imagePanels.addEventListener('scroll', handleScroll);
       elements.loadMoreBtn.addEventListener('click', loadMoreImages);
     }
 
     function fetchData() {
-      showLoader("Loading data...");
-      $.ajax({
-        url: CONFIG.sheetUrl,
-        type: 'GET',
-        dataType: 'text',
-        success: function(response) {
-          const parsed = Papa.parse(response, { header: true, skipEmptyLines: true, transform: value => value ? value.trim() : '' });
-          if (parsed.errors.length) {
-            console.error(parsed.errors);
-            showToast("Error parsing data", true);
-            hideLoader();
-            return;
-          }
-          allData = parsed.data.filter(row => Object.values(row).some(val => val));
-          allData.forEach(item => {
+      showLoader("Loading data from spreadsheet...");
+      Papa.parse(CONFIG.sheetUrl, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          allData = results.data.filter(row => 
+            Object.values(row).some(val => val && val.trim() !== '')
+          ).map(item => {
             if (item[CONFIG.fields.date]) {
               item.formattedDate = new Date(item[CONFIG.fields.date]);
             }
+            return item;
           });
+          
           filteredData = [...allData];
           renderDashboard();
           populateFilters();
@@ -570,6 +576,90 @@
       });
     }
 
+    function applyFilters() {
+      showLoader("Applying filters...");
+      
+      // Update current filters from UI
+      currentFilters = {
+        dateFrom: elements.filterDateFrom.valueAsDate,
+        dateTo: elements.filterDateTo.valueAsDate,
+        issue: elements.filterIssue.value || null,
+        enterprise: elements.filterEnterprise.value || null,
+        statFilter: currentFilters.statFilter
+      };
+
+      filteredData = allData.filter(row => {
+        // Date filtering
+        if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
+          return false;
+        }
+        if (currentFilters.dateTo) {
+          const end = new Date(currentFilters.dateTo);
+          end.setHours(23, 59, 59, 999);
+          if (!row.formattedDate || row.formattedDate > end) {
+            return false;
+          }
+        }
+
+        // Dropdown filters
+        if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
+          return false;
+        }
+        if (currentFilters.enterprise && row[CONFIG.fields.enterprise] !== currentFilters.enterprise) {
+          return false;
+        }
+
+        // Stat table filter
+        if (currentFilters.statFilter) {
+          const field = currentFilters.statFilter.field;
+          const value = currentFilters.statFilter.value;
+          if (row[field] !== value) {
+            return false;
+          }
+        }
+
+        return true;
+      });
+
+      updateFilteredImages();
+      renderDashboard();
+      loadInitialImages();
+      hideLoader();
+      showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
+    }
+
+    function updateFilteredImages() {
+      const uniqueImageMap = new Map();
+      filteredData.forEach(item => {
+        const imageId = item[CONFIG.fields.imageId];
+        if (imageId && !uniqueImageMap.has(imageId)) {
+          uniqueImageMap.set(imageId, item);
+        }
+      });
+      filteredUniqueImages = Array.from(uniqueImageMap.values());
+      currentImageIndex = 0;
+    }
+
+    function resetFilters() {
+      showLoader("Resetting filters...");
+      // Reset date filters to default (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
+      
+      // Reset dropdown filters
+      elements.filterIssue.value = "";
+      elements.filterEnterprise.value = "";
+      
+      // Clear stat filter
+      currentFilters.statFilter = null;
+      
+      // Apply the reset filters
+      applyFilters();
+    }
+
     function renderDashboard(data = filteredData) {
       CONFIG.statsCards.forEach(card => {
         const container = document.getElementById(card.id);
@@ -577,6 +667,22 @@
         container.innerHTML = createStatsTable(summary, data.length);
       });
       setupStatFilters();
+    }
+
+    function setupStatFilters() {
+      CONFIG.statsCards.forEach(card => {
+        const container = document.getElementById(card.id);
+        container.addEventListener('click', (e) => {
+          const row = e.target.closest('tr');
+          if (row && row.dataset.value) {
+            currentFilters.statFilter = {
+              field: card.field,
+              value: decodeURIComponent(row.dataset.value)
+            };
+            applyFilters();
+          }
+        });
+      });
     }
 
     function summarizeData(data, field) {
@@ -602,27 +708,6 @@
       return html;
     }
 
-    function setupStatFilters() {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        container.addEventListener('click', (e) => {
-          const row = e.target.closest('tr');
-          if (row && row.dataset.value) {
-            const field = card.field;
-            const value = decodeURIComponent(row.dataset.value);
-            
-            if (field === CONFIG.fields.issue && elements.filterIssue) {
-              elements.filterIssue.value = value;
-            } else if (field === CONFIG.fields.enterprise && elements.filterEnterprise) {
-              elements.filterEnterprise.value = value;
-            }
-            
-            applyFilters();
-          }
-        });
-      });
-    }
-
     function populateFilters() {
       const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
       issueValues.forEach(val => {
@@ -640,98 +725,15 @@
       });
     }
 
-    function applyFilters() {
-      showLoader("Applying filters...");
-      const from = elements.filterDateFrom.valueAsDate;
-      const to = elements.filterDateTo.valueAsDate;
-      const issue = elements.filterIssue.value;
-      const ent = elements.filterEnterprise.value;
-      
-      filteredData = allData.filter(row => {
-        if (from && (!row.formattedDate || row.formattedDate < from)) return false;
-        if (to) {
-          const end = new Date(to);
-          end.setHours(23, 59, 59, 999);
-          if (!row.formattedDate || row.formattedDate > end) return false;
-        }
-        if (issue && row[CONFIG.fields.issue] !== issue) return false;
-        if (ent && row[CONFIG.fields.enterprise] !== ent) return false;
-        return true;
-      });
-      
-      // Create a list of unique image IDs from the filtered data
-      const uniqueImageMap = new Map();
-      filteredData.forEach(item => {
-        const imageId = item[CONFIG.fields.imageId];
-        if (imageId && !uniqueImageMap.has(imageId)) {
-          uniqueImageMap.set(imageId, item);
-        }
-      });
-      filteredUniqueImages = Array.from(uniqueImageMap.values());
-      
-      currentImageIndex = 0;
-      uniqueImages.clear();
-      renderDashboard();
-      loadInitialImages();
-      hideLoader();
-      showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
-    }
-
-    function resetFilters() {
-      showLoader("Resetting filters...");
-      // Reset date filters to default (last 30 days)
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
-      
-      // Reset dropdown filters
-      elements.filterIssue.value = "";
-      elements.filterEnterprise.value = "";
-      
-      // Apply the reset filters
-      applyFilters();
-    }
-
-    function setupAutoRefresh() {
-      clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        fetchData();
-        setupAutoRefresh();
-      }, CONFIG.refreshInterval);
-    }
-
-    function showLoader(msg) {
-      elements.loaderText.textContent = msg;
-      elements.loader.style.display = 'flex';
-    }
-
-    function hideLoader() {
-      elements.loader.style.display = 'none';
-    }
-
-    function showToast(msg, isError = false) {
-      elements.toast.textContent = msg;
-      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
-      elements.toast.classList.add('show');
-      setTimeout(() => elements.toast.classList.remove('show'), 3000);
-    }
-
-    function updateLastUpdated() {
-      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
-    }
-
     function loadInitialImages() {
       elements.imagePanels.innerHTML = "";
       currentImageIndex = 0;
-      uniqueImages.clear();
       loadMoreImages();
     }
 
     function handleScroll() {
       const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100; // 100px threshold
+      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
       
       if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
         loadMoreImages();
@@ -745,9 +747,8 @@
       }
       
       isLoading = true;
-      elements.loadMoreBtn.style.display = 'none'; // Hide button during auto-load
+      elements.loadMoreBtn.style.display = 'none';
       
-      // Process next batch
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
       
@@ -759,7 +760,6 @@
       currentImageIndex = batchEnd;
       isLoading = false;
       
-      // Show button if there are more images remaining
       if (currentImageIndex < filteredUniqueImages.length) {
         elements.loadMoreBtn.style.display = 'block';
       }
@@ -793,6 +793,34 @@
       `;
       
       elements.imagePanels.appendChild(row);
+    }
+
+    function setupAutoRefresh() {
+      clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        fetchData();
+        setupAutoRefresh();
+      }, CONFIG.refreshInterval);
+    }
+
+    function showLoader(message) {
+      elements.loaderText.textContent = message;
+      elements.loader.style.display = 'flex';
+    }
+
+    function hideLoader() {
+      elements.loader.style.display = 'none';
+    }
+
+    function showToast(msg, isError = false) {
+      elements.toast.textContent = msg;
+      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+      elements.toast.classList.add('show');
+      setTimeout(() => elements.toast.classList.remove('show'), 3000);
+    }
+
+    function updateLastUpdated() {
+      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
     }
   </script>
 </body>
