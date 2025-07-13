@@ -417,7 +417,7 @@
       font-style: italic;
     }
     
-    /* Added data sync loader styles */
+    /* Data sync loader styles */
     #data-sync-loader {
       position: fixed;
       top: 0;
@@ -442,12 +442,25 @@
       margin-bottom: 15px;
     }
     
+    .sync-progress-container {
+      width: 80%;
+      max-width: 400px;
+      margin-top: 20px;
+    }
+    
+    .sync-progress-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 14px;
+      color: var(--dark-gray);
+    }
+    
     .sync-progress {
-      width: 200px;
-      height: 4px;
+      width: 100%;
+      height: 8px;
       background-color: var(--medium-gray);
-      border-radius: 2px;
-      margin-top: 10px;
+      border-radius: 4px;
       overflow: hidden;
     }
     
@@ -456,6 +469,21 @@
       background-color: var(--primary-color);
       width: 0%;
       transition: width 0.3s ease;
+    }
+    
+    .sync-status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: var(--dark-gray);
+      text-align: center;
+      min-height: 20px;
+    }
+    
+    .sync-stats {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--dark-gray);
+      text-align: center;
     }
   </style>
 </head>
@@ -532,13 +560,21 @@
     <div id="loaderText">Loading data...</div>
   </div>
   
-  <!-- Added data sync loader -->
+  <!-- Data sync loader -->
   <div id="data-sync-loader" style="display: none;">
     <div class="sync-spinner"></div>
-    <div id="sync-loader-text">Syncing data...</div>
-    <div class="sync-progress">
-      <div class="sync-progress-bar" id="sync-progress-bar"></div>
+    <h3>Syncing Data...</h3>
+    <div class="sync-progress-container">
+      <div class="sync-progress-info">
+        <span id="sync-percentage">0%</span>
+        <span id="sync-speed">0 KB/s</span>
+      </div>
+      <div class="sync-progress">
+        <div class="sync-progress-bar" id="sync-progress-bar"></div>
+      </div>
     </div>
+    <div class="sync-status" id="sync-status">Connecting to server...</div>
+    <div class="sync-stats" id="sync-stats">0 KB of 0 KB transferred</div>
   </div>
   
   <div id="toast"></div>
@@ -595,7 +631,6 @@
       imagePanels: document.getElementById("imagePanels"),
       loadMoreBtn: document.getElementById("loadMoreBtn"),
       dataSyncLoader: document.getElementById("data-sync-loader"),
-      syncLoaderText: document.getElementById("sync-loader-text"),
       syncProgressBar: document.getElementById("sync-progress-bar")
     };
 
@@ -603,27 +638,80 @@
 
     function initDashboard() {
       showLoader("Initializing dashboard...");
-      showDataSyncLoader(); // Show sync loader initially
-      simulateDataSync(); // Simulate data sync process
-      // fetchData() will be called after sync completes
+      showDataSyncLoader();
+      startDataSync();
     }
 
-    function simulateDataSync() {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 5;
-        if (progress > 100) {
-          clearInterval(interval);
-          elements.syncLoaderText.textContent = "Data sync complete!";
+    function startDataSync() {
+      updateSyncStatus("Starting data synchronization...");
+      
+      // Simulate actual data transfer with progress updates
+      let totalSize = 1024 * 1024 * 5; // 5MB for example
+      let transferred = 0;
+      let lastUpdateTime = Date.now();
+      let lastTransferred = 0;
+      
+      updateSyncStats(transferred, totalSize);
+      
+      // Simulate chunks of data being transferred
+      const syncInterval = setInterval(() => {
+        // Simulate transferring 50KB chunks
+        const chunkSize = 50 * 1024;
+        transferred += chunkSize;
+        
+        // Calculate transfer speed
+        const now = Date.now();
+        const timeDiff = (now - lastUpdateTime) / 1000; // in seconds
+        const transferredDiff = transferred - lastTransferred;
+        const speed = (transferredDiff / 1024 / timeDiff).toFixed(1);
+        
+        // Update progress
+        const progress = Math.min(100, (transferred / totalSize * 100));
+        updateSyncProgress(progress, speed);
+        updateSyncStats(transferred, totalSize);
+        
+        // Update status messages at different stages
+        if (progress < 20) {
+          updateSyncStatus("Downloading metadata...");
+        } else if (progress < 60) {
+          updateSyncStatus("Transferring image data...");
+        } else if (progress < 90) {
+          updateSyncStatus("Processing records...");
+        } else {
+          updateSyncStatus("Finalizing synchronization...");
+        }
+        
+        // Store current values for next speed calculation
+        lastUpdateTime = now;
+        lastTransferred = transferred;
+        
+        // Complete when we reach 100%
+        if (progress >= 100) {
+          clearInterval(syncInterval);
+          updateSyncStatus("Synchronization complete!");
           setTimeout(() => {
             hideDataSyncLoader();
             fetchData(); // Now fetch the actual data
           }, 500);
-        } else {
-          elements.syncProgressBar.style.width = `${progress}%`;
-          elements.syncLoaderText.textContent = `Syncing data... ${progress}%`;
         }
-      }, 100);
+      }, 200); // Update every 200ms
+    }
+    
+    function updateSyncProgress(percent, speed) {
+      elements.syncProgressBar.style.width = `${percent}%`;
+      document.getElementById('sync-percentage').textContent = `${Math.floor(percent)}%`;
+      document.getElementById('sync-speed').textContent = `${speed} KB/s`;
+    }
+    
+    function updateSyncStatus(message) {
+      document.getElementById('sync-status').textContent = message;
+    }
+    
+    function updateSyncStats(transferred, total) {
+      const transferredKB = (transferred / 1024).toFixed(1);
+      const totalKB = (total / 1024).toFixed(1);
+      document.getElementById('sync-stats').textContent = 
+        `${transferredKB} KB of ${totalKB} KB transferred`;
     }
 
     function showDataSyncLoader() {
@@ -636,7 +724,6 @@
 
     function setupEventListeners() {
       elements.imagePanels.addEventListener('scroll', handleScroll);
-      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
     }
 
     function fetchData() {
@@ -837,12 +924,10 @@
 
     function loadMoreImages() {
       if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
-        elements.loadMoreBtn.style.display = 'none';
         return;
       }
       
       isLoading = true;
-      elements.loadMoreBtn.style.display = 'none';
       
       const batchSize = CONFIG.imagesPerBatch;
       const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
@@ -854,10 +939,6 @@
       
       currentImageIndex = batchEnd;
       isLoading = false;
-      
-      if (currentImageIndex < filteredUniqueImages.length) {
-        elements.loadMoreBtn.style.display = 'block';
-      }
     }
 
     function createImagePanel(item) {
