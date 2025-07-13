@@ -99,6 +99,11 @@
       color: var(--white);
     }
 
+    .btn-secondary {
+      background-color: var(--medium-gray);
+      color: var(--dark-gray);
+    }
+
     .btn:hover {
       opacity: 0.9;
       transform: translateY(-1px);
@@ -421,7 +426,7 @@
       </div>
       <div class="filter-actions">
         <button class="btn btn-primary" onclick="applyFilters()">Apply</button>
-        <button class="btn btn-danger" onclick="refreshData()">Refresh</button>
+        <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
       </div>
     </div>
 
@@ -473,7 +478,7 @@
   <script>
     const CONFIG = {
       sheetUrl: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSMkhFFKjQAikk2pTrxLo6LfUKKMlqqdoUJ1QZP0wP-l-z505sK4P3v8s__wmarI8DbmEwWbY6gW3bQ/pub?gid=0&single=true&output=csv",
-      refreshInterval: 300000,
+      refreshInterval: 86400000, // 24 hours in milliseconds
       fields: {
         date: "createdDate",
         imageType: "image_category",
@@ -498,7 +503,7 @@
     };
 
     let allData = [], filteredData = [], currentImageIndex = 0, refreshTimer = null;
-    let uniqueImages = new Set(); // Track unique image IDs
+    let uniqueImages = new Set();
 
     const elements = {
       loader: document.getElementById("loader"),
@@ -519,15 +524,7 @@
       showLoader("Loading dashboard...");
       fetchData();
       setupAutoRefresh();
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
-      
-      // Set up scroll event for infinite loading
-      elements.imagePanels.addEventListener('scroll', handleScroll);
-      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
+      resetFilters(); // Initialize with default filters
     }
 
     function fetchData() {
@@ -546,7 +543,6 @@
           allData.forEach(item => {
             if (item[CONFIG.fields.date]) item.formattedDate = new Date(item[CONFIG.fields.date]);
             
-            // Clean image URLs by removing the prefix if it exists
             const imageFields = [CONFIG.fields.rawImage, CONFIG.fields.aiImage, CONFIG.fields.manualImage];
             imageFields.forEach(field => {
               if (item[field] && item[field].startsWith(CONFIG.imageUrlPrefix)) {
@@ -611,14 +607,12 @@
             const field = card.field;
             const value = decodeURIComponent(row.dataset.value);
             
-            // Set the corresponding filter dropdown if it exists
             if (field === CONFIG.fields.issue && elements.filterIssue) {
               elements.filterIssue.value = value;
             } else if (field === CONFIG.fields.enterprise && elements.filterEnterprise) {
               elements.filterEnterprise.value = value;
             }
             
-            // Apply the filters
             applyFilters();
           }
         });
@@ -669,16 +663,26 @@
       showToast(`Showing ${filteredData.length} records (${uniqueImages.size} unique images)`);
     }
 
-    function refreshData() {
-      clearTimeout(refreshTimer);
-      showLoader("Refreshing data...");
-      fetchData();
+    function resetFilters() {
+      // Reset date filters to default (last 30 days)
+      const today = new Date();
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+      elements.filterDateTo.valueAsDate = today;
+      
+      // Reset dropdown filters
+      elements.filterIssue.value = "";
+      elements.filterEnterprise.value = "";
+      
+      // Apply the reset filters
+      applyFilters();
     }
 
     function setupAutoRefresh() {
       clearTimeout(refreshTimer);
       refreshTimer = setTimeout(() => {
-        refreshData();
+        fetchData();
         setupAutoRefresh();
       }, CONFIG.refreshInterval);
     }
@@ -719,22 +723,18 @@
       let loadedCount = 0;
       let i = currentImageIndex;
       
-      // Loop through data until we've loaded the batch size or reached the end
       while (i < filteredData.length && loadedCount < CONFIG.imagesPerBatch) {
         const item = filteredData[i];
         const imageId = item[CONFIG.fields.imageId];
         
-        // Only process if we haven't seen this image before
         if (!uniqueImages.has(imageId)) {
           const raw = item[CONFIG.fields.rawImage] || "";
           const ai = item[CONFIG.fields.aiImage] || "";
           const manual = item[CONFIG.fields.manualImage] || "";
           
-          // Create a new row for each image (Raw, AI, Manual)
           const row = document.createElement("div");
           row.className = "image-row";
           
-          // Raw Image Panel
           const rawPanel = document.createElement("div");
           rawPanel.className = "image-panel";
           rawPanel.innerHTML = `
@@ -745,7 +745,6 @@
             </div>
           `;
           
-          // AI Image Panel
           const aiPanel = document.createElement("div");
           aiPanel.className = "image-panel";
           aiPanel.innerHTML = `
@@ -755,7 +754,6 @@
             </div>
           `;
           
-          // Manual Image Panel
           const manualPanel = document.createElement("div");
           manualPanel.className = "image-panel";
           manualPanel.innerHTML = `
@@ -765,15 +763,11 @@
             </div>
           `;
           
-          // Append all panels to the row
           row.appendChild(rawPanel);
           row.appendChild(aiPanel);
           row.appendChild(manualPanel);
           
-          // Append the row to the container
           elements.imagePanels.appendChild(row);
-          
-          // Mark this image as shown
           uniqueImages.add(imageId);
           loadedCount++;
         }
@@ -783,7 +777,6 @@
       
       currentImageIndex = i;
       
-      // Check if there are more unique images to show
       const hasMoreUniqueImages = filteredData.slice(currentImageIndex).some(item => 
         !uniqueImages.has(item[CONFIG.fields.imageId])
       );
@@ -795,7 +788,6 @@
       const scrollPosition = panels.scrollTop + panels.clientHeight;
       const scrollHeight = panels.scrollHeight;
       
-      // Load more when scrolled near bottom (within 200px)
       if (scrollHeight - scrollPosition < 200 && currentImageIndex < filteredData.length) {
         loadMoreImages();
       }
