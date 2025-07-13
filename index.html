@@ -293,7 +293,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -308,16 +308,17 @@
       color: var(--primary-color);
       text-align: center;
       max-width: 80%;
+      font-weight: 500;
     }
 
     .spinner {
-      width: 60px;
-      height: 60px;
-      border: 6px solid rgba(66, 133, 244, 0.2);
+      width: 70px;
+      height: 70px;
+      border: 8px solid rgba(66, 133, 244, 0.2);
       border-radius: 50%;
       border-top-color: var(--primary-color);
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 15px;
+      animation: spin 1.2s linear infinite;
+      margin-bottom: 20px;
     }
 
     .progress-container {
@@ -325,17 +326,19 @@
       max-width: 400px;
       background-color: var(--medium-gray);
       border-radius: 20px;
-      margin: 15px 0;
-      height: 20px;
+      margin: 20px 0;
+      height: 24px;
       position: relative;
       overflow: hidden;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .progress-bar {
       height: 100%;
-      background-color: var(--primary-color);
+      background: linear-gradient(90deg, var(--primary-color), #5b8bf7);
       width: 0%;
-      transition: width 0.3s ease;
+      transition: width 0.4s ease-out;
+      border-radius: 20px;
     }
 
     .progress-text {
@@ -344,16 +347,51 @@
       left: 0;
       width: 100%;
       text-align: center;
-      line-height: 20px;
+      line-height: 24px;
       color: var(--white);
-      font-size: 12px;
-      text-shadow: 0 0 2px rgba(0,0,0,0.5);
+      font-size: 13px;
+      font-weight: 500;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    }
+
+    .progress-details {
+      font-size: 14px;
+      color: var(--dark-gray);
+      margin-top: 5px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    #cancelLoad {
+      margin-top: 25px;
+      padding: 8px 25px;
+      font-size: 15px;
+    }
+
+    .error-message {
+      color: var(--danger-color);
+      font-weight: 500;
+      margin-top: 15px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    .retry-btn {
+      margin-top: 15px;
+      background-color: var(--primary-color);
+      color: white;
     }
 
     @keyframes spin {
       to {
         transform: rotate(360deg);
       }
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { opacity: 0.8; }
     }
 
     #toast {
@@ -513,12 +551,15 @@
 
   <div id="loader">
     <div class="spinner"></div>
-    <div id="loaderText">Loading data...</div>
+    <div id="loaderText">Preparing dashboard...</div>
     <div class="progress-container">
       <div class="progress-bar" id="progressBar"></div>
       <div class="progress-text" id="progressText">0%</div>
     </div>
-    <button id="cancelLoad" class="btn btn-secondary" style="margin-top: 20px;">Cancel</button>
+    <div class="progress-details" id="progressDetails">Starting data sync...</div>
+    <div class="error-message" id="errorMessage" style="display: none;"></div>
+    <button id="retryBtn" class="btn retry-btn" style="display: none;">Retry</button>
+    <button id="cancelLoad" class="btn btn-secondary">Cancel</button>
   </div>
   <div id="toast"></div>
 
@@ -575,8 +616,11 @@
       imagePanels: document.getElementById("imagePanels"),
       loadMoreBtn: document.getElementById("loadMoreBtn"),
       cancelLoad: document.getElementById("cancelLoad"),
+      retryBtn: document.getElementById("retryBtn"),
       progressBar: document.getElementById("progressBar"),
-      progressText: document.getElementById("progressText")
+      progressText: document.getElementById("progressText"),
+      progressDetails: document.getElementById("progressDetails"),
+      errorMessage: document.getElementById("errorMessage")
     };
 
     document.addEventListener('DOMContentLoaded', initDashboard);
@@ -592,75 +636,155 @@
       elements.imagePanels.addEventListener('scroll', handleScroll);
       elements.loadMoreBtn.addEventListener('click', loadMoreImages);
       elements.cancelLoad.addEventListener('click', cancelLoading);
+      elements.retryBtn.addEventListener('click', retryLoading);
     }
 
     function cancelLoading() {
       if (currentParse) {
-        if (currentParse.abort) {
-          currentParse.abort();
+        try {
+          if (currentParse.abort) {
+            currentParse.abort();
+          }
+        } catch (e) {
+          console.log("Abort error:", e);
         }
       }
       hideLoader();
       showToast("Data loading cancelled", true);
     }
 
+    function retryLoading() {
+      elements.errorMessage.style.display = 'none';
+      elements.retryBtn.style.display = 'none';
+      fetchData();
+    }
+
     function fetchData() {
-      showLoader("Loading data from spreadsheet...");
-      updateProgress(0);
+      showLoader("Connecting to data source...");
+      updateProgress(0, "Initializing connection");
       
       let loadedBytes = 0;
       let totalBytes = 0;
+      let startTime = Date.now();
       
-      currentParse = Papa.parse(CONFIG.sheetUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        beforeFirstChunk: function(chunk) {
-          const contentLength = chunk.split('\n')[0].match(/Content-Length: (\d+)/i);
-          if (contentLength && contentLength[1]) {
-            totalBytes = parseInt(contentLength[1]);
-          }
-          return chunk;
-        },
-        chunk: function(chunk) {
-          if (totalBytes > 0) {
-            loadedBytes += chunk.length;
-            const percent = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
-            updateProgress(percent);
-          }
-        },
-        complete: function(results) {
-          updateProgress(100);
-          allData = results.data.filter(row => 
-            Object.values(row).some(val => val && val.trim() !== '')
-          ).map(item => {
-            if (item[CONFIG.fields.date]) {
-              item.formattedDate = new Date(item[CONFIG.fields.date]);
+      try {
+        currentParse = Papa.parse(CONFIG.sheetUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          beforeFirstChunk: function(chunk) {
+            try {
+              const contentLength = chunk.split('\n')[0].match(/Content-Length: (\d+)/i);
+              if (contentLength && contentLength[1]) {
+                totalBytes = parseInt(contentLength[1]);
+                updateProgress(0, `Downloading ${formatBytes(totalBytes)}...`);
+              }
+            } catch (e) {
+              console.log("Content-Length parse error:", e);
             }
-            return item;
-          });
-          
-          filteredData = [...allData];
-          renderDashboard();
-          populateFilters();
-          loadInitialImages();
-          updateLastUpdated();
-          showToast("Data loaded successfully");
-          setTimeout(hideLoader, 500);
-        },
-        error: function(err) {
-          console.error(err);
-          showToast("Error loading data", true);
-          hideLoader();
-        }
-      });
+            return chunk;
+          },
+          chunk: function(chunk) {
+            loadedBytes += chunk.length;
+            const percent = Math.min(99, Math.round((loadedBytes / (totalBytes || loadedBytes * 1.5)) * 100));
+            
+            // Calculate speed and time remaining if we have totalBytes
+            let details = `Downloading: ${formatBytes(loadedBytes)}`;
+            if (totalBytes > 0) {
+              details += ` of ${formatBytes(totalBytes)}`;
+              const elapsed = (Date.now() - startTime) / 1000;
+              const speed = loadedBytes / elapsed;
+              const remainingBytes = totalBytes - loadedBytes;
+              const remainingTime = remainingBytes / speed;
+              
+              if (speed > 0) {
+                details += ` (${formatBytes(speed)}/sec, ${formatTime(remainingTime)} remaining)`;
+              }
+            }
+            
+            updateProgress(percent, details);
+          },
+          complete: function(results) {
+            if (!results || !results.data) {
+              throw new Error("No data received from server");
+            }
+            
+            updateProgress(100, "Processing data...");
+            setTimeout(() => {
+              try {
+                allData = results.data.filter(row => 
+                  Object.values(row).some(val => val && val.trim() !== '')
+                ).map(item => {
+                  if (item[CONFIG.fields.date]) {
+                    item.formattedDate = new Date(item[CONFIG.fields.date]);
+                  }
+                  return item;
+                });
+                
+                filteredData = [...allData];
+                renderDashboard();
+                populateFilters();
+                loadInitialImages();
+                updateLastUpdated();
+                showToast("Data synchronized successfully");
+                setTimeout(hideLoader, 500);
+              } catch (e) {
+                console.error("Processing error:", e);
+                showError("Error processing data: " + e.message);
+              }
+            }, 300);
+          },
+          error: function(err) {
+            console.error("Download error:", err);
+            showError("Error loading data: " + (err.message || "Connection failed"));
+          }
+        });
+      } catch (e) {
+        console.error("Parse initialization error:", e);
+        showError("Failed to start data download: " + e.message);
+      }
     }
 
-    function updateProgress(percent) {
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+    }
+
+    function formatTime(seconds) {
+      if (seconds < 60) return Math.round(seconds) + ' sec';
+      const minutes = Math.floor(seconds / 60);
+      const remainingSec = Math.round(seconds % 60);
+      return `${minutes}m ${remainingSec}s`;
+    }
+
+    function updateProgress(percent, details = "") {
       elements.progressBar.style.width = percent + '%';
       elements.progressText.textContent = percent + '%';
       elements.loaderText.textContent = 
-        percent < 100 ? `Loading data... (${percent}%)` : "Processing data...";
+        percent < 100 ? `Syncing data... (${percent}%)` : "Finalizing...";
+      
+      if (details) {
+        elements.progressDetails.textContent = details;
+      }
+      
+      // Pulse animation when processing
+      if (percent === 100) {
+        elements.progressBar.style.animation = "pulse 1.5s infinite";
+      } else {
+        elements.progressBar.style.animation = "none";
+      }
+    }
+
+    function showError(message) {
+      elements.errorMessage.textContent = message;
+      elements.errorMessage.style.display = 'block';
+      elements.retryBtn.style.display = 'inline-block';
+      elements.cancelLoad.style.display = 'none';
+      elements.loaderText.textContent = "Error occurred";
+      elements.progressBar.style.backgroundColor = var(--danger-color);
     }
 
     function showLoader(message) {
@@ -668,6 +792,10 @@
       elements.loader.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       updateProgress(0);
+      elements.errorMessage.style.display = 'none';
+      elements.retryBtn.style.display = 'none';
+      elements.cancelLoad.style.display = 'inline-block';
+      elements.progressBar.style.backgroundColor = 'linear-gradient(90deg, var(--primary-color), #5b8bf7)';
     }
 
     function hideLoader() {
