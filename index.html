@@ -750,7 +750,7 @@
       const k = 1024;
       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     function formatTime(seconds) {
@@ -784,7 +784,7 @@
       elements.retryBtn.style.display = 'inline-block';
       elements.cancelLoad.style.display = 'none';
       elements.loaderText.textContent = "Error occurred";
-      elements.progressBar.style.backgroundColor = var(--danger-color);
+      elements.progressBar.style.backgroundColor = 'var(--danger-color)';
     }
 
     function showLoader(message) {
@@ -795,7 +795,8 @@
       elements.errorMessage.style.display = 'none';
       elements.retryBtn.style.display = 'none';
       elements.cancelLoad.style.display = 'inline-block';
-      elements.progressBar.style.backgroundColor = 'linear-gradient(90deg, var(--primary-color), #5b8bf7)';
+      elements.progressBar.style.backgroundColor = '';
+      elements.progressBar.style.backgroundImage = 'linear-gradient(90deg, var(--primary-color), #5b8bf7)';
     }
 
     function hideLoader() {
