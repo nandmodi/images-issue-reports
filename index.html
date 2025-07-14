@@ -371,24 +371,6 @@
       table-layout: auto !important;
     }
     
-    .load-more {
-      text-align: center;
-      margin-top: 20px;
-    }
-    
-    .load-more-btn {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    
-    .load-more-btn:hover {
-      background-color: #3367d6;
-    }
-    
     .image-id-header {
       font-weight: lighter;
       margin-bottom: 10px;
@@ -461,9 +443,6 @@
     <div class="image-section">
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
-      <div class="load-more">
-        <button class="load-more-btn" id="loadMoreBtn">Load More Images</button>
-      </div>
     </div>
 
     <div class="footer">
@@ -499,16 +478,13 @@
         { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
         { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
-      ],
-      imagesPerBatch: 10
+      ]
     };
 
     let allData = [];
     let filteredData = [];
-    let currentImageIndex = 0;
     let refreshTimer = null;
     let filteredUniqueImages = [];
-    let isLoading = false;
     let currentFilters = {
       dateFrom: null,
       dateTo: null,
@@ -528,8 +504,7 @@
         filterDateTo: document.getElementById("filterDateTo"),
         filterIssue: document.getElementById("filterIssue"),
         filterEnterprise: document.getElementById("filterEnterprise"),
-        imagePanels: document.getElementById("imagePanels"),
-        loadMoreBtn: document.getElementById("loadMoreBtn")
+        imagePanels: document.getElementById("imagePanels")
       };
 
       function initDashboard() {
@@ -542,10 +517,6 @@
       function setupEventListeners() {
         if (elements.imagePanels) {
           elements.imagePanels.addEventListener('scroll', handleScroll);
-        }
-        
-        if (elements.loadMoreBtn) {
-          elements.loadMoreBtn.addEventListener('click', loadMoreImages);
         }
       }
 
@@ -568,7 +539,7 @@
             filteredData = [...allData];
             renderDashboard();
             populateFilters();
-            loadInitialImages();
+            loadAllImages();
             updateLastUpdated();
             showToast("Data loaded successfully");
             hideLoader();
@@ -624,7 +595,7 @@
 
         updateFilteredImages();
         renderDashboard();
-        loadInitialImages();
+        loadAllImages();
         hideLoader();
         showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
       }
@@ -638,7 +609,6 @@
           }
         });
         filteredUniqueImages = Array.from(uniqueImageMap.values());
-        currentImageIndex = 0;
       }
 
       function resetFilters() {
@@ -646,13 +616,20 @@
         const today = new Date();
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(today.getDate() - 30);
+        
         elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
         elements.filterDateTo.valueAsDate = today;
         
         elements.filterIssue.value = "";
         elements.filterEnterprise.value = "";
         
-        currentFilters.statFilter = null;
+        currentFilters = {
+          dateFrom: thirtyDaysAgo,
+          dateTo: today,
+          issue: null,
+          enterprise: null,
+          statFilter: null
+        };
         
         applyFilters();
       }
@@ -728,52 +705,18 @@
         });
       }
 
-      function loadInitialImages() {
+      function loadAllImages() {
         if (elements.imagePanels) {
           elements.imagePanels.innerHTML = "";
         }
-        currentImageIndex = 0;
-        loadMoreImages();
+        
+        filteredUniqueImages.forEach(item => {
+          createImagePanel(item);
+        });
       }
 
       function handleScroll() {
-        if (!elements.imagePanels) return;
-        
-        const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
-        const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-        
-        if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
-          loadMoreImages();
-        }
-      }
-
-      function loadMoreImages() {
-        if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
-          if (elements.loadMoreBtn) {
-            elements.loadMoreBtn.style.display = 'none';
-          }
-          return;
-        }
-        
-        isLoading = true;
-        if (elements.loadMoreBtn) {
-          elements.loadMoreBtn.style.display = 'none';
-        }
-        
-        const batchSize = CONFIG.imagesPerBatch;
-        const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
-        
-        for (let i = currentImageIndex; i < batchEnd; i++) {
-          const item = filteredUniqueImages[i];
-          createImagePanel(item);
-        }
-        
-        currentImageIndex = batchEnd;
-        isLoading = false;
-        
-        if (elements.loadMoreBtn && currentImageIndex < filteredUniqueImages.length) {
-          elements.loadMoreBtn.style.display = 'block';
-        }
+        // Can be used for infinite scroll if needed
       }
 
       function createImagePanel(item) {
