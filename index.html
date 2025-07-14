@@ -9,6 +9,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
   <style>
+    /* CSS remains the same as original */
     :root {
       --primary-color: #4285f4;
       --secondary-color: #34a853;
@@ -397,9 +398,10 @@
         <label for="filterDateTo">Date Range (To)</label>
         <input type="date" id="filterDateTo">
       </div>
+      <!-- Changed: Issue filter to Sub Issue filter -->
       <div class="filter-group">
-        <label for="filterIssue">Issue</label>
-        <select id="filterIssue"><option value="">All Issues</option></select>
+        <label for="filterSubIssue">Sub Issue</label>
+        <select id="filterSubIssue"><option value="">All Sub Issues</option></select>
       </div>
       <div class="filter-group">
         <label for="filterEnterprise">Enterprise</label>
@@ -417,9 +419,10 @@
           <div class="percentage-card-header">Image Type</div>
           <div class="percentage-card-body" id="imageTypeStats"></div>
         </div>
+        <!-- Changed: Issue Wise to Sub Issue Wise -->
         <div class="percentage-card">
-          <div class="percentage-card-header">Issue Wise</div>
-          <div class="percentage-card-body" id="issueStats"></div>
+          <div class="percentage-card-header">Sub Issue Wise</div>
+          <div class="percentage-card-body" id="subIssueStats"></div>
         </div>
       </div>
       <div class="percentage-column">
@@ -433,9 +436,10 @@
         </div>
       </div>
       <div class="percentage-column">
+        <!-- Changed: Sub Issue to Issue -->
         <div class="percentage-card full-height">
-          <div class="percentage-card-header">Sub Issue </div>
-          <div class="percentage-card-body" id="subIssueStats"></div>
+          <div class="percentage-card-header">Issue</div>
+          <div class="percentage-card-body" id="issueStats"></div>
         </div>
       </div>
     </div>
@@ -474,10 +478,11 @@
       },
       statsCards: [
         { id: "imageTypeStats", field: "image_category", title: "Image Type" },
-        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" },
+        // Changed: Swapped issueStats and subIssueStats
         { id: "subIssueStats", field: "rejected_comment", title: "Sub Issue" },
         { id: "aiTagStats", field: "ai_tag", title: "AI Tag" },
-        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" }
+        { id: "enterpriseStats", field: "enterprise_name", title: "Enterprise" },
+        { id: "issueStats", field: "mappedRejected_comment", title: "Issue" }
       ]
     };
 
@@ -488,7 +493,8 @@
     let currentFilters = {
       dateFrom: null,
       dateTo: null,
-      issue: null,
+      // Changed: issue to subIssue
+      subIssue: null,
       enterprise: null,
       statFilter: null
     };
@@ -502,7 +508,8 @@
         lastUpdated: document.getElementById("lastUpdated"),
         filterDateFrom: document.getElementById("filterDateFrom"),
         filterDateTo: document.getElementById("filterDateTo"),
-        filterIssue: document.getElementById("filterIssue"),
+        // Changed: filterIssue to filterSubIssue
+        filterSubIssue: document.getElementById("filterSubIssue"),
         filterEnterprise: document.getElementById("filterEnterprise"),
         imagePanels: document.getElementById("imagePanels")
       };
@@ -558,7 +565,8 @@
         currentFilters = {
           dateFrom: elements.filterDateFrom.valueAsDate,
           dateTo: elements.filterDateTo.valueAsDate,
-          issue: elements.filterIssue.value || null,
+          // Changed: issue to subIssue
+          subIssue: elements.filterSubIssue.value || null,
           enterprise: elements.filterEnterprise.value || null,
           statFilter: currentFilters.statFilter
         };
@@ -575,7 +583,8 @@
             }
           }
 
-          if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
+          // Changed: Issue to Sub Issue filtering
+          if (currentFilters.subIssue && row[CONFIG.fields.subIssue] !== currentFilters.subIssue) {
             return false;
           }
           if (currentFilters.enterprise && row[CONFIG.fields.enterprise] !== currentFilters.enterprise) {
@@ -620,13 +629,15 @@
         elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
         elements.filterDateTo.valueAsDate = today;
         
-        elements.filterIssue.value = "";
+        // Changed: Reset subIssue instead of issue
+        elements.filterSubIssue.value = "";
         elements.filterEnterprise.value = "";
         
         currentFilters = {
           dateFrom: thirtyDaysAgo,
           dateTo: today,
-          issue: null,
+          // Changed: issue to subIssue
+          subIssue: null,
           enterprise: null,
           statFilter: null
         };
@@ -685,15 +696,17 @@
       }
 
       function populateFilters() {
-        const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
-        issueValues.forEach(val => {
+        // Changed: Populate subIssue filter instead of issue
+        const subIssueValues = [...new Set(allData.map(item => item[CONFIG.fields.subIssue] || 'Unknown'))].sort();
+        subIssueValues.forEach(val => {
           const opt = document.createElement('option');
           opt.value = val;
           opt.textContent = val;
-          if (elements.filterIssue) {
-            elements.filterIssue.appendChild(opt);
+          if (elements.filterSubIssue) {
+            elements.filterSubIssue.appendChild(opt);
           }
         });
+        
         const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
         enterpriseValues.forEach(val => {
           const opt = document.createElement('option');
