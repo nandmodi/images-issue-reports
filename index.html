@@ -462,6 +462,7 @@
       <div class="image-section-header">Image Section</div>
       <div class="image-panels" id="imagePanels"></div>
       <div class="load-more">
+        <button class="load-more-btn" id="loadMoreBtn">Load More Images</button>
       </div>
     </div>
 
@@ -516,311 +517,342 @@
       statFilter: null
     };
 
-    const elements = {
-      loader: document.getElementById("loader"),
-      loaderText: document.getElementById("loaderText"),
-      toast: document.getElementById("toast"),
-      lastUpdated: document.getElementById("lastUpdated"),
-      filterDateFrom: document.getElementById("filterDateFrom"),
-      filterDateTo: document.getElementById("filterDateTo"),
-      filterIssue: document.getElementById("filterIssue"),
-      filterEnterprise: document.getElementById("filterEnterprise"),
-      imagePanels: document.getElementById("imagePanels"),
-      loadMoreBtn: document.getElementById("loadMoreBtn")
-    };
-
-    document.addEventListener('DOMContentLoaded', initDashboard);
-
-    function initDashboard() {
-      showLoader("Initializing dashboard...");
-      fetchData();
-      setupEventListeners();
-      resetFilters();
-    }
-
-    function setupEventListeners() {
-      elements.imagePanels.addEventListener('scroll', handleScroll);
-      elements.loadMoreBtn.addEventListener('click', loadMoreImages);
-    }
-
-    function fetchData() {
-      showLoader("Loading data from spreadsheet...");
-      Papa.parse(CONFIG.sheetUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          allData = results.data.filter(row => 
-            Object.values(row).some(val => val && val.trim() !== '')
-          ).map(item => {
-            if (item[CONFIG.fields.date]) {
-              item.formattedDate = new Date(item[CONFIG.fields.date]);
-            }
-            return item;
-          });
-          
-          filteredData = [...allData];
-          renderDashboard();
-          populateFilters();
-          loadInitialImages();
-          updateLastUpdated();
-          showToast("Data loaded successfully");
-          hideLoader();
-        },
-        error: function(err) {
-          console.error(err);
-          showToast("Error loading data", true);
-          hideLoader();
-        }
-      });
-    }
-
-    function applyFilters() {
-      showLoader("Applying filters...");
-      
-      // Update current filters from UI
-      currentFilters = {
-        dateFrom: elements.filterDateFrom.valueAsDate,
-        dateTo: elements.filterDateTo.valueAsDate,
-        issue: elements.filterIssue.value || null,
-        enterprise: elements.filterEnterprise.value || null,
-        statFilter: currentFilters.statFilter
+    // Initialize elements after DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      const elements = {
+        loader: document.getElementById("loader"),
+        loaderText: document.getElementById("loaderText"),
+        toast: document.getElementById("toast"),
+        lastUpdated: document.getElementById("lastUpdated"),
+        filterDateFrom: document.getElementById("filterDateFrom"),
+        filterDateTo: document.getElementById("filterDateTo"),
+        filterIssue: document.getElementById("filterIssue"),
+        filterEnterprise: document.getElementById("filterEnterprise"),
+        imagePanels: document.getElementById("imagePanels"),
+        loadMoreBtn: document.getElementById("loadMoreBtn")
       };
 
-      filteredData = allData.filter(row => {
-        // Date filtering
-        if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
-          return false;
+      function initDashboard() {
+        showLoader("Initializing dashboard...");
+        fetchData();
+        setupEventListeners();
+        resetFilters();
+      }
+
+      function setupEventListeners() {
+        if (elements.imagePanels) {
+          elements.imagePanels.addEventListener('scroll', handleScroll);
         }
-        if (currentFilters.dateTo) {
-          const end = new Date(currentFilters.dateTo);
-          end.setHours(23, 59, 59, 999);
-          if (!row.formattedDate || row.formattedDate > end) {
-            return false;
-          }
+        
+        if (elements.loadMoreBtn) {
+          elements.loadMoreBtn.addEventListener('click', loadMoreImages);
         }
+      }
 
-        // Dropdown filters
-        if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
-          return false;
-        }
-        if (currentFilters.enterprise && row[CONFIG.fields.enterprise] !== currentFilters.enterprise) {
-          return false;
-        }
-
-        // Stat table filter
-        if (currentFilters.statFilter) {
-          const field = currentFilters.statFilter.field;
-          const value = currentFilters.statFilter.value;
-          if (row[field] !== value) {
-            return false;
-          }
-        }
-
-        return true;
-      });
-
-      updateFilteredImages();
-      renderDashboard();
-      loadInitialImages();
-      hideLoader();
-      showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
-    }
-
-    function updateFilteredImages() {
-      const uniqueImageMap = new Map();
-      filteredData.forEach(item => {
-        const imageId = item[CONFIG.fields.imageId];
-        if (imageId && !uniqueImageMap.has(imageId)) {
-          uniqueImageMap.set(imageId, item);
-        }
-      });
-      filteredUniqueImages = Array.from(uniqueImageMap.values());
-      currentImageIndex = 0;
-    }
-
-    function resetFilters() {
-      showLoader("Resetting filters...");
-      // Reset date filters to default (last 30 days)
-      const today = new Date();
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
-      elements.filterDateTo.valueAsDate = today;
-      
-      // Reset dropdown filters
-      elements.filterIssue.value = "";
-      elements.filterEnterprise.value = "";
-      
-      // Clear stat filter
-      currentFilters.statFilter = null;
-      
-      // Apply the reset filters
-      applyFilters();
-    }
-
-    function renderDashboard(data = filteredData) {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        const summary = summarizeData(data, card.field);
-        container.innerHTML = createStatsTable(summary, data.length);
-      });
-      setupStatFilters();
-    }
-
-    function setupStatFilters() {
-      CONFIG.statsCards.forEach(card => {
-        const container = document.getElementById(card.id);
-        container.addEventListener('click', (e) => {
-          const row = e.target.closest('tr');
-          if (row && row.dataset.value) {
-            currentFilters.statFilter = {
-              field: card.field,
-              value: decodeURIComponent(row.dataset.value)
-            };
-            applyFilters();
+      function fetchData() {
+        showLoader("Loading data from spreadsheet...");
+        Papa.parse(CONFIG.sheetUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            allData = results.data.filter(row => 
+              Object.values(row).some(val => val && val.trim() !== '')
+            ).map(item => {
+              if (item[CONFIG.fields.date]) {
+                item.formattedDate = new Date(item[CONFIG.fields.date]);
+              }
+              return item;
+            });
+            
+            filteredData = [...allData];
+            renderDashboard();
+            populateFilters();
+            loadInitialImages();
+            updateLastUpdated();
+            showToast("Data loaded successfully");
+            hideLoader();
+          },
+          error: function(err) {
+            console.error(err);
+            showToast("Error loading data", true);
+            hideLoader();
           }
         });
-      });
-    }
+      }
 
-    function summarizeData(data, field) {
-      return data.reduce((acc, row) => {
-        const value = row[field] || 'Unknown';
-        acc[value] = (acc[value] || 0) + 1;
-        return acc;
-      }, {});
-    }
+      function applyFilters() {
+        showLoader("Applying filters...");
+        
+        currentFilters = {
+          dateFrom: elements.filterDateFrom.valueAsDate,
+          dateTo: elements.filterDateTo.valueAsDate,
+          issue: elements.filterIssue.value || null,
+          enterprise: elements.filterEnterprise.value || null,
+          statFilter: currentFilters.statFilter
+        };
 
-    function createStatsTable(summaryData, totalCount) {
-      const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
-      let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
-      items.forEach(([key, count]) => {
-        const percentage = ((count / totalCount) * 100).toFixed(1);
-        html += `<tr data-value="${encodeURIComponent(key)}">
-          <td>${key}</td>
-          <td>${count}</td>
-          <td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td>
-        </tr>`;
-      });
-      html += `</tbody></table>`;
-      return html;
-    }
+        filteredData = allData.filter(row => {
+          if (currentFilters.dateFrom && (!row.formattedDate || row.formattedDate < currentFilters.dateFrom)) {
+            return false;
+          }
+          if (currentFilters.dateTo) {
+            const end = new Date(currentFilters.dateTo);
+            end.setHours(23, 59, 59, 999);
+            if (!row.formattedDate || row.formattedDate > end) {
+              return false;
+            }
+          }
 
-    function populateFilters() {
-      const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
-      issueValues.forEach(val => {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = val;
-        elements.filterIssue.appendChild(opt);
-      });
-      const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
-      enterpriseValues.forEach(val => {
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = val;
-        elements.filterEnterprise.appendChild(opt);
-      });
-    }
+          if (currentFilters.issue && row[CONFIG.fields.issue] !== currentFilters.issue) {
+            return false;
+          }
+          if (currentFilters.enterprise && row[CONFIG.fields.enterprise] !== currentFilters.enterprise) {
+            return false;
+          }
 
-    function loadInitialImages() {
-      elements.imagePanels.innerHTML = "";
-      currentImageIndex = 0;
-      loadMoreImages();
-    }
+          if (currentFilters.statFilter) {
+            const field = currentFilters.statFilter.field;
+            const value = currentFilters.statFilter.value;
+            if (row[field] !== value) {
+              return false;
+            }
+          }
 
-    function handleScroll() {
-      const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
-      const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-      
-      if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
+          return true;
+        });
+
+        updateFilteredImages();
+        renderDashboard();
+        loadInitialImages();
+        hideLoader();
+        showToast(`Showing ${filteredData.length} records (${filteredUniqueImages.length} unique images)`);
+      }
+
+      function updateFilteredImages() {
+        const uniqueImageMap = new Map();
+        filteredData.forEach(item => {
+          const imageId = item[CONFIG.fields.imageId];
+          if (imageId && !uniqueImageMap.has(imageId)) {
+            uniqueImageMap.set(imageId, item);
+          }
+        });
+        filteredUniqueImages = Array.from(uniqueImageMap.values());
+        currentImageIndex = 0;
+      }
+
+      function resetFilters() {
+        showLoader("Resetting filters...");
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+        elements.filterDateFrom.valueAsDate = thirtyDaysAgo;
+        elements.filterDateTo.valueAsDate = today;
+        
+        elements.filterIssue.value = "";
+        elements.filterEnterprise.value = "";
+        
+        currentFilters.statFilter = null;
+        
+        applyFilters();
+      }
+
+      function renderDashboard(data = filteredData) {
+        CONFIG.statsCards.forEach(card => {
+          const container = document.getElementById(card.id);
+          const summary = summarizeData(data, card.field);
+          container.innerHTML = createStatsTable(summary, data.length);
+        });
+        setupStatFilters();
+      }
+
+      function setupStatFilters() {
+        CONFIG.statsCards.forEach(card => {
+          const container = document.getElementById(card.id);
+          if (container) {
+            container.addEventListener('click', (e) => {
+              const row = e.target.closest('tr');
+              if (row && row.dataset.value) {
+                currentFilters.statFilter = {
+                  field: card.field,
+                  value: decodeURIComponent(row.dataset.value)
+                };
+                applyFilters();
+              }
+            });
+          }
+        });
+      }
+
+      function summarizeData(data, field) {
+        return data.reduce((acc, row) => {
+          const value = row[field] || 'Unknown';
+          acc[value] = (acc[value] || 0) + 1;
+          return acc;
+        }, {});
+      }
+
+      function createStatsTable(summaryData, totalCount) {
+        const items = Object.entries(summaryData).sort((a, b) => b[1] - a[1]);
+        let html = `<table><thead><tr><th>Name</th><th>Count</th><th>Percentage</th></tr></thead><tbody>`;
+        items.forEach(([key, count]) => {
+          const percentage = ((count / totalCount) * 100).toFixed(1);
+          html += `<tr data-value="${encodeURIComponent(key)}">
+            <td>${key}</td>
+            <td>${count}</td>
+            <td class="bar-cell"><span style="width:${percentage}%"></span><div>${percentage}%</div></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        return html;
+      }
+
+      function populateFilters() {
+        const issueValues = [...new Set(allData.map(item => item[CONFIG.fields.issue] || 'Unknown'))].sort();
+        issueValues.forEach(val => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          if (elements.filterIssue) {
+            elements.filterIssue.appendChild(opt);
+          }
+        });
+        const enterpriseValues = [...new Set(allData.map(item => item[CONFIG.fields.enterprise] || 'Unknown'))].sort();
+        enterpriseValues.forEach(val => {
+          const opt = document.createElement('option');
+          opt.value = val;
+          opt.textContent = val;
+          if (elements.filterEnterprise) {
+            elements.filterEnterprise.appendChild(opt);
+          }
+        });
+      }
+
+      function loadInitialImages() {
+        if (elements.imagePanels) {
+          elements.imagePanels.innerHTML = "";
+        }
+        currentImageIndex = 0;
         loadMoreImages();
       }
-    }
 
-    function loadMoreImages() {
-      if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
-        elements.loadMoreBtn.style.display = 'none';
-        return;
+      function handleScroll() {
+        if (!elements.imagePanels) return;
+        
+        const { scrollTop, clientHeight, scrollHeight } = elements.imagePanels;
+        const nearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+        
+        if (nearBottom && !isLoading && currentImageIndex < filteredUniqueImages.length) {
+          loadMoreImages();
+        }
       }
-      
-      isLoading = true;
-      elements.loadMoreBtn.style.display = 'none';
-      
-      const batchSize = CONFIG.imagesPerBatch;
-      const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
-      
-      for (let i = currentImageIndex; i < batchEnd; i++) {
-        const item = filteredUniqueImages[i];
-        createImagePanel(item);
+
+      function loadMoreImages() {
+        if (isLoading || currentImageIndex >= filteredUniqueImages.length) {
+          if (elements.loadMoreBtn) {
+            elements.loadMoreBtn.style.display = 'none';
+          }
+          return;
+        }
+        
+        isLoading = true;
+        if (elements.loadMoreBtn) {
+          elements.loadMoreBtn.style.display = 'none';
+        }
+        
+        const batchSize = CONFIG.imagesPerBatch;
+        const batchEnd = Math.min(currentImageIndex + batchSize, filteredUniqueImages.length);
+        
+        for (let i = currentImageIndex; i < batchEnd; i++) {
+          const item = filteredUniqueImages[i];
+          createImagePanel(item);
+        }
+        
+        currentImageIndex = batchEnd;
+        isLoading = false;
+        
+        if (elements.loadMoreBtn && currentImageIndex < filteredUniqueImages.length) {
+          elements.loadMoreBtn.style.display = 'block';
+        }
       }
-      
-      currentImageIndex = batchEnd;
-      isLoading = false;
-      
-      if (currentImageIndex < filteredUniqueImages.length) {
-        elements.loadMoreBtn.style.display = 'block';
+
+      function createImagePanel(item) {
+        if (!elements.imagePanels) return;
+        
+        const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
+        const row = document.createElement("div");
+        row.className = "image-row";
+        
+        row.innerHTML = `
+          <div class="image-panel">
+            <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
+            <div class="image-panel-header">Raw</div>
+            <div class="image-container">
+              ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          </div>
+          <div class="image-panel">
+            <div class="image-panel-header">AI</div>
+            <div class="image-container">
+              ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          </div>
+          <div class="image-panel">
+            <div class="image-panel-header">Manual</div>
+            <div class="image-container">
+              ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+            </div>
+          </div>
+        `;
+        
+        elements.imagePanels.appendChild(row);
       }
-    }
 
-    function createImagePanel(item) {
-      const { rawImage, aiImage, manualImage, imageId } = CONFIG.fields;
-      const row = document.createElement("div");
-      row.className = "image-row";
-      
-      row.innerHTML = `
-        <div class="image-panel">
-          <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
-          <div class="image-panel-header">Raw</div>
-          <div class="image-container">
-            ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-        <div class="image-panel">
-          <div class="image-panel-header">AI</div>
-          <div class="image-container">
-            ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-        <div class="image-panel">
-          <div class="image-panel-header">Manual</div>
-          <div class="image-container">
-            ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
-          </div>
-        </div>
-      `;
-      
-      elements.imagePanels.appendChild(row);
-    }
+      function setupAutoRefresh() {
+        clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+          fetchData();
+          setupAutoRefresh();
+        }, CONFIG.refreshInterval);
+      }
 
-    function setupAutoRefresh() {
-      clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(() => {
-        fetchData();
-        setupAutoRefresh();
-      }, CONFIG.refreshInterval);
-    }
+      function showLoader(message) {
+        if (elements.loaderText) {
+          elements.loaderText.textContent = message;
+        }
+        if (elements.loader) {
+          elements.loader.style.display = 'flex';
+        }
+      }
 
-    function showLoader(message) {
-      elements.loaderText.textContent = message;
-      elements.loader.style.display = 'flex';
-    }
+      function hideLoader() {
+        if (elements.loader) {
+          elements.loader.style.display = 'none';
+        }
+      }
 
-    function hideLoader() {
-      elements.loader.style.display = 'none';
-    }
+      function showToast(msg, isError = false) {
+        if (!elements.toast) return;
+        
+        elements.toast.textContent = msg;
+        elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
+        elements.toast.classList.add('show');
+        setTimeout(() => {
+          if (elements.toast) {
+            elements.toast.classList.remove('show');
+          }
+        }, 3000);
+      }
 
-    function showToast(msg, isError = false) {
-      elements.toast.textContent = msg;
-      elements.toast.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--secondary-color)';
-      elements.toast.classList.add('show');
-      setTimeout(() => elements.toast.classList.remove('show'), 3000);
-    }
+      function updateLastUpdated() {
+        if (elements.lastUpdated) {
+          elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
+        }
+      }
 
-    function updateLastUpdated() {
-      elements.lastUpdated.textContent = `Last updated: ${new Date().toLocaleString()}`;
-    }
+      // Initialize the dashboard
+      initDashboard();
+    });
   </script>
 </body>
 </html>
