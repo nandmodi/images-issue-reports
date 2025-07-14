@@ -390,7 +390,7 @@
     }
     
     .image-id-header {
-      font-weight: bold;
+      font-weight: lighter;
       margin-bottom: 10px;
       color: var(--primary-color);
       font-size: 18px;
@@ -788,19 +788,19 @@
             <div class="image-id-header">${item[imageId] || 'Image ID'}</div>
             <div class="image-panel-header">Raw</div>
             <div class="image-container">
-              ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+              ${item[rawImage] ? `<img src="${item[rawImage]}" alt="Raw Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
             </div>
           </div>
           <div class="image-panel">
             <div class="image-panel-header">AI</div>
             <div class="image-container">
-              ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+              ${item[aiImage] ? `<img src="${item[aiImage]}" alt="AI Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
             </div>
           </div>
           <div class="image-panel">
             <div class="image-panel-header">Manual</div>
             <div class="image-container">
-              ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>'">` : '<div class="no-image">No Image Available</div>'}
+              ${item[manualImage] ? `<img src="${item[manualImage]}" alt="Manual Image" onerror="this.parentElement.innerHTML='<div class=\"no-image\">Image failed to load</div>` : '<div class="no-image">No Image Available</div>'}
             </div>
           </div>
         `;
