@@ -412,7 +412,6 @@ th.sortable.sort-active .arrow { opacity: 1; color: var(--accent); }tbody tr { b
   //
   // 360-SPIN — single source:
   //   • 360-Responses       (sheet 2, gid=1075238960) → all rows
-  const API_BASE = 'https://PLACEHOLDER.vercel.app/api/query?product=';
   const PUB_BASE_1 =
     'https://docs.google.com/spreadsheets/d/e/2PACX-1vSWW7muoNyeY_1VOLhybuT7ChNHtkhAscxDikyiCPQChIWqi1m3KXsd9e0_i_UFE7bDrW_7kfH-vIhL/pub?single=true&output=csv&gid=';
   const PUB_BASE_2 =
@@ -501,17 +500,31 @@ th.sortable.sort-active .arrow { opacity: 1; color: var(--accent); }tbody tr { b
     if (pg) pg.style.display = 'none';
 
     try {
-      const res = await fetch(API_BASE + encodeURIComponent(currentProduct));
-      if (!res.ok) throw new Error('HTTP Error ' + res.status);
-      const payload = await res.json();
-      if (payload.error) throw new Error(payload.error);
+      const SOURCES = SOURCES_BY_PRODUCT[currentProduct];
+      const results = await Promise.all(SOURCES.map(async (src) => {
+        const res = await fetch(src.url);
+        if (!res.ok) {
+          throw new Error(`HTTP Error ${res.status} (${src.name})`);
+        }
+        const text = await res.text();
+        if (!text || text.trim().length === 0) {
+          throw new Error(`CSV is empty (${src.name})`);
+        }
+        const rows = parseCSV(text, src.map);
+        // Keep only rows inside this source's date window.
+        // Rows with unparseable dates are kept.
+        return rows.filter(r => {
+          if (!r._date) return true;
+          if (src.from && r._date < src.from) return false;
+          if (src.to   && r._date >= src.to)  return false;
+          return true;
+        });
+      }));
 
-      const raw  = Array.isArray(payload) ? payload : (payload.rows || []);
-      const rows = raw.map(normalizeRow);
-
-      // Dedup (safety net — BigQuery ab single source hai)
+      // Dedup: same record present in both tabs (9-Jul overlap) counted once.
+      // Key = image_id when available, else timestamp+sku_id.
       const seen = new Set();
-      allRows = rows.filter(r => {
+      allRows = results.flat().filter(r => {
         const key = (r.imageId && r.imageId.trim())
           ? 'img:' + r.imageId.trim()
           : 'ts:' + r.timestamp + '|' + r.skuId;
@@ -519,7 +532,6 @@ th.sortable.sort-active .arrow { opacity: 1; color: var(--accent); }tbody tr { b
         seen.add(key);
         return true;
       });
-
       // keep merged data chronologically sorted (nulls last)
       allRows.sort((a, b) => {
         if (!a._date) return 1;
@@ -539,25 +551,6 @@ th.sortable.sort-active .arrow { opacity: 1; color: var(--accent); }tbody tr { b
     }
   }
 
-  function normalizeRow(r) {
-    const g = k => (r[k] == null ? '' : String(r[k]).trim());
-    const o = {
-      timestamp:   g('timestamp'),
-      enterprise:  g('enterprise'),
-      qcUser:      g('qcUser'),
-      editUser:    g('editUser'),
-      skuId:       g('skuId'),
-      imageId:     g('imageId'),
-      issue:       g('issue').replace(/\s*\n\s*/g, ' | '),
-      inputImg:    g('inputImg'),
-      aiImg:       g('aiImg'),
-      finalImg:    g('finalImg'),
-      submitIssue: g('submitIssue'),
-      loginUser:   g('loginUser'),
-    };
-    o._date = parseDate(o.timestamp);
-    return o;
-  }
   // ── CSV PARSER ────────────────────────────────────────────────────────
   // Quote-aware: handles commas AND newlines inside quoted cells (e.g. the
   // multi-line "Issues" column in 360-Responses) plus escaped "" quotes.
